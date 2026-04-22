@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Categorias Financeiras{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold"><i class="fa-solid fa-tags mr-2"></i>Categorias Financeiras</h1>
+    <a href="{% url 'financeiro:categoria_create' %}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Nova Categoria
+    </a>
+  </div>
+
+  <div class="bg-base-100 p-4 rounded-box shadow">
+    <form method="get" class="flex gap-2">
+      <input type="text" name="busca" value="{{ request.GET.busca }}" placeholder="Buscar categoria" class="input input-bordered input-sm w-full max-w-sm">
+      <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+      <a href="{% url 'financeiro:categoria_list' %}" class="btn btn-ghost btn-sm">Limpar</a>
+    </form>
+  </div>
+
+  <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-zebra table-sm">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Tipo</th>
+          <th>Cor</th>
+          <th>Status</th>
+          <th class="text-right">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for categoria in categorias %}
+          <tr>
+            <td>{{ categoria.descricao }}</td>
+            <td>{{ categoria.get_tipo_display }}</td>
+            <td><span class="badge badge-sm {{ categoria.cor }}">{{ categoria.cor }}</span></td>
+            <td>{% if categoria.status %}Ativa{% else %}Inativa{% endif %}</td>
+            <td class="text-right">
+              <a href="{% url 'financeiro:categoria_update' categoria.pk %}" class="btn btn-ghost btn-xs">Editar</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-base-content/60 py-4">Nenhuma categoria cadastrada.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

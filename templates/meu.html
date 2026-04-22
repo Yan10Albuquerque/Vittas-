@@ -1,0 +1,189 @@
+{% load static %}
+<div class="fixed top-0 inset-x-0 z-50 px-3 py-3">
+  <nav class="navbar bg-base-100 shadow w-full max-w-[1440px] mx-auto px-4 lg:px-6" id="menu">
+    <div class="flex-none">
+      <a class="btn btn-ghost px-0 hover:bg-transparent" href="{% url 'usuario:home' %}">
+        <img src="{% static 'img/VittasNavBlack.png' %}" alt="Vittas" class="h-7">
+      </a>
+    </div>
+
+    <div class="flex-none lg:hidden ml-auto">
+      <button class="btn btn-ghost" aria-label="Abrir menu"
+        onclick="document.getElementById('menuDrawer').classList.toggle('hidden')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="hidden lg:flex flex-1 justify-center px-4">
+      <ul class="menu menu-horizontal px-1 text-base-content z-50 flex-nowrap whitespace-nowrap">
+        {% if modulos_plano.pacientes %}
+        <li><a href="{% url 'paciente:paciente_list' %}" title="Pacientes"><i class="fa-solid fa-id-card-clip"></i>
+            Pacientes</a></li>
+        {% endif %}
+        {% if modulos_plano.agenda %}
+        <li><a href="{% url 'agenda:agenda_consultas' %}" title="Agenda de Consultas"><i
+              class="fa-solid fa-stethoscope"></i> Consultas</a></li>
+        {% endif %}
+        {% if modulos_plano.financeiro %}
+        <li>
+          <details>
+            <summary><i class="fa-solid fa-dollar-sign"></i> Financeiro</summary>
+            <ul class="p-2 bg-base-100 w-52 shadow rounded-box z-[1]">
+              <li><a href="{% url 'financeiro:dashboard' %}"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+              <li><a href="{% url 'financeiro:lancamento_list' %}"><i class="fa-solid fa-wallet"></i> Lançamentos</a>
+              </li>
+              <li><a href="{% url 'financeiro:categoria_list' %}"><i class="fa-solid fa-tags"></i> Categorias</a></li>
+            </ul>
+          </details>
+        </li>
+        {% endif %}
+
+        {% if modulos_plano.enfermagem %}
+        <li>
+          <details>
+            <summary><i class="fa-solid fa-user-nurse"></i> Enfermagem</summary>
+            <ul class="p-2 bg-base-100 w-52 shadow rounded-box z-[1]">
+              <li><a href="{% url 'enfermagem:autorizacao_list' %}"><i class="fa-solid fa-id-card-clip"></i>
+                  Autorizações</a></li>
+              <li><a href="{% url 'enfermagem:aprovados_list' %}"><i class="fa-solid fa-clipboard-check"></i> Aprovados
+                  (Agenda)</a></li>
+              <li><a href="{% url 'enfermagem:procedimento_list' %}"><i class="fa-solid fa-hand-holding-medical"></i>
+                  Procedimentos</a></li>
+            </ul>
+          </details>
+        </li>
+        {% endif %}
+
+        {% if mostrar_menu_configuracoes %}
+        <li>
+          <details>
+            <summary><i class="fa-solid fa-gear"></i> Configurações</summary>
+            <ul class="p-2 bg-base-100 w-64 shadow rounded-box z-[1]">
+              {% if modulos_plano.cadastros %}
+              <li><a href="{% url 'base:convenio_list' %}"><i class="fa-solid fa-hand-holding-heart fa-fw"></i>
+                  Convênios</a></li>
+              <li><a href="{% url 'base:forma_pagamento_list' %}"><i class="fa-solid fa-money-check-dollar fa-fw"></i>
+                  Formas de Pagamento</a></li>
+              <li class="h-px bg-base-300 my-1"></li>
+              <li><a href="{% url 'base:tipo_consulta_list' %}"><i class="fa-solid fa-suitcase-medical fa-fw"></i> Tipo
+                  de Consultas</a></li>
+              <li><a href="{% url 'base:status_agendamento_list' %}"><i class="fa-solid fa-list-check fa-fw"></i> Status
+                  de Agendamento</a></li>
+              <li><a href="{% url 'base:tipo_exame_list' %}"><i class="fa-solid fa-x-ray fa-fw"></i> Tipo de Exames</a>
+              </li>
+              <li class="h-px bg-base-300 my-1"></li>
+              <li><a href="{% url 'base:especialidade_list' %}"><i class="fa-solid fa-tags fa-fw"></i>
+                  Especialidades</a></li>
+              <li><a href="{% url 'medico:medico_list' %}"><i class="fa-solid fa-user-doctor fa-fw"></i> Cadastro de
+                  Médicos</a></li>
+              <li class="h-px bg-base-300 my-1"></li>
+              {% endif %}
+              <li><a href="{% url 'usuario:clinicas_list' %}"><i class="fa-solid fa-building fa-fw"></i> Dados da
+                  Clínica</a></li>
+            </ul>
+          </details>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <div class="hidden lg:flex items-center gap-3">
+      <div class="dropdown dropdown-end z-50">
+        <label tabindex="0" class="btn btn-ghost btn-sm">
+          <i class="fa-solid fa-circle-user"></i>
+          <span>{{ request.user.nome_fantasia }}</span>
+        </label>
+        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-64 z-[1]">
+          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">{{ request.user.email }}</li>
+          {% if clinica_atual %}
+          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">{{ clinica_atual.nome_fantasia
+            }} • {{ clinica_atual.get_plano_display }}</li>
+          {% endif %}
+          <li class="h-px bg-base-300 my-1"></li>
+          <li><a href="#" onclick="document.getElementById('modal_perfil').classList.add('modal-open')"><i
+                class="fa-solid fa-address-card"></i> Dados da Clínica</a></li>
+          <li class="h-px bg-base-300 my-1"></li>
+          <li>
+            <form method="post" action="{% url 'usuario:logout_api' %}">
+              {% csrf_token %}
+              <button type="submit" class="w-full text-left">
+                <i class="fa-solid fa-door-open"></i> Sair
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<div id="menuDrawer"
+  class="lg:hidden hidden fixed top-20 inset-x-3 bg-base-100 shadow z-40 rounded-3xl border border-white/10">
+  <ul class="menu p-4 gap-1">
+    {% if modulos_plano.pacientes %}
+    <li><a href="{% url 'paciente:paciente_list' %}" title="Pacientes"><i class="fa-solid fa-id-card-clip"></i>
+        Pacientes</a></li>
+    {% endif %}
+    {% if modulos_plano.agenda %}
+    <li><a href="{% url 'agenda:agenda_consultas' %}" title="Agenda"><i class="fa-solid fa-stethoscope"></i> Agenda</a>
+    </li>
+    {% endif %}
+    {% if modulos_plano.financeiro %}
+    <li><a href="{% url 'financeiro:dashboard' %}" title="Financeiro"><i class="fa-solid fa-dollar-sign"></i>
+        Financeiro</a></li>
+    {% endif %}
+    {% if modulos_plano.cadastros %}
+    <li><a href="{% url 'medico:medico_list' %}" title="Cadastro de Médicos"><i class="fa-solid fa-user-doctor"></i>
+        Cadastro de Médicos</a></li>
+    <li><a href="{% url 'base:status_agendamento_list' %}" title="Status de Agendamento"><i
+          class="fa-solid fa-list-check"></i> Status de Agendamento</a></li>
+    {% endif %}
+    {% if mostrar_menu_configuracoes %}
+    <li><a href="{% url 'usuario:clinicas_list' %}" title="Dados da Clínica"><i class="fa-solid fa-building"></i> Minha
+        Clínica</a></li>
+    {% endif %}
+  </ul>
+</div>
+
+<div id="modal_perfil" class="modal">
+  <div class="modal-box">
+    <h3 class="font-semibold text-lg">Dados da Clínica</h3>
+    <div class="mt-4 space-y-3">
+      <div class="flex justify-center">
+        <img src="{% static 'img/user.png' %}" class="rounded-full w-16 h-16" alt="Imagem da Clínica">
+      </div>
+      <div class="space-y-1">
+        <label class="label"><span class="label-text">Clínica</span></label>
+        <input class="input input-bordered input-sm w-full" type="text" value="{{ request.user.nome_fantasia }}"
+          disabled>
+      </div>
+      <div class="space-y-1">
+        <label class="label"><span class="label-text">Email de acesso</span></label>
+        <input class="input input-bordered input-sm w-full" type="text" value="{{ request.user.email }}" disabled>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label class="label"><span class="label-text">Senha Atual</span></label>
+          <input class="input input-bordered input-sm w-full" type="password" id="senha_atual_user"
+            name="senha_atual_user">
+        </div>
+        <div class="space-y-1">
+          <label class="label"><span class="label-text">Nova Senha</span></label>
+          <input class="input input-bordered input-sm w-full" type="password" id="nova_senha_user"
+            name="nova_senha_user">
+        </div>
+      </div>
+      <div class="text-right">
+        <button class="btn btn-warning btn-sm" type="button" id="alterar_senha_user">
+          <i class="fa-solid fa-retweet"></i> Alterar Senha
+        </button>
+      </div>
+    </div>
+    <div class="modal-action">
+      <button class="btn"
+        onclick="document.getElementById('modal_perfil').classList.remove('modal-open')">Fechar</button>
+    </div>
+  </div>
+</div>

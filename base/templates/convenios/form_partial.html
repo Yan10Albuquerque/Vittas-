@@ -1,0 +1,51 @@
+<form method="post" 
+      @submit.prevent="submitForm($el)" 
+      class="space-y-4">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-error text-sm">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Verifique os erros abaixo.</span>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+            <label class="label"><span class="label-text">Nome</span></label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<span class="text-error text-xs mt-1">{{ form.nome.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-control">
+            <label class="label"><span class="label-text">CNPJ</span></label>
+            {{ form.cnpj }}
+            {% if form.cnpj.errors %}<span class="text-error text-xs mt-1">{{ form.cnpj.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-control">
+            <label class="label"><span class="label-text">Telefone</span></label>
+            {{ form.telefone }}
+        </div>
+        <div class="form-control">
+            <label class="label"><span class="label-text">Email</span></label>
+            {{ form.email }}
+        </div>
+        <div class="form-control md:col-span-2">
+            <label class="label"><span class="label-text">Observações</span></label>
+            {{ form.obs }}
+        </div>
+        <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4">
+                <span class="label-text">Ativo</span>
+                {{ form.status }}
+            </label>
+        </div>
+    </div>
+
+    <div class="modal-action">
+        <button type="button" class="btn btn-ghost btn-sm" @click="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm" :class="{'loading': isSubmitting}" :disabled="isSubmitting">
+            <i class="fas fa-save"></i> 
+            <span x-text="isSubmitting ? 'Salvando...' : 'Salvar'"></span>
+        </button>
+    </div>
+</form>

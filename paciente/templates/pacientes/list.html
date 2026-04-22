@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Pacientes | Vittas{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="vittas-page-header">
+    <h1 class="page-title text-3xl font-bold">
+      <i class="fa-solid fa-id-card-clip"></i> Pacientes
+    </h1>
+    <a href="{% url 'paciente:paciente_create' %}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-user-plus"></i> Novo Paciente
+    </a>
+  </div>
+
+  <!-- Filtro -->
+  <div class="bg-base-100 p-4 rounded-[1.5rem] shadow border border-white/10">
+    <form method="get" class="flex gap-2">
+      <input type="text" name="busca" value="{{ request.GET.busca }}" 
+        placeholder="Buscar por nome, CPF ou carteira..." class="input input-bordered input-sm w-full max-w-xs" />
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+      {% if request.GET.busca %}
+      <a href="{% url 'paciente:paciente_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+
+    <!-- Tabela -->
+    <div class="overflow-x-auto bg-base-100 rounded-[1.5rem] shadow border border-white/10">
+      <table class="table table-zebra table-sm w-full">
+        <thead>
+          <tr>
+            <th class="text-left">Nome</th>
+            <th class="text-center">CPF</th>
+            <th class="text-center">Celular</th>
+            <th class="text-center">Convênio</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for paciente in pacientes %}
+          <tr>
+            <td>
+              <div class="font-bold">{{ paciente.nome }}</div>
+              <div class="text-sm opacity-50">{{ paciente.email|default:"-" }}</div>
+            </td>
+            <td class="text-center">{{ paciente.cpf }}</td>
+            <td class="text-center">{{ paciente.celular }}</td>
+            <td class="text-center">{{ paciente.convenio.nome|default:"Particular" }}</td>
+            <td class="flex gap-2 text-center justify-center">
+              <a href="{% url 'paciente:paciente_update' paciente.pk %}" class="btn btn-sm btn-ghost" title="Editar">
+                <i class="fas fa-edit"></i> Editar
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-4 text-base-content/70">
+              Nenhum paciente encontrado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginação -->
+    {% if is_paginated %}
+    <div class="join justify-center mt-4">
+        {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}" class="join-item btn btn-sm">«</a>
+        {% else %}
+      <button class="join-item btn btn-sm btn-disabled">«</button>
+        {% endif %}
+        
+      <button class="join-item btn btn-sm">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</button>
+        
+        {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}" class="join-item btn btn-sm">»</a>
+        {% else %}
+      <button class="join-item btn btn-sm btn-disabled">»</button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+  <script>
+    function confirmarExclusaoPaciente(url) {
+      window.openConfirmDialog(url, () => {
+        window.dispatchEvent(new CustomEvent('show-toast', {
+          detail: {
+            type: 'success',
+            message: 'Paciente excluído com sucesso!'
+          }
+        }));
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      });
+    }
+  </script>
+{% endblock %}

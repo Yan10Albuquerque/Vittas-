@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Minha Clínica{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl mx-auto">
+    <div class="vittas-page-header">
+      <h1 class="page-title text-3xl font-semibold">
+        <i class="fa-solid fa-building mr-2"></i>
+        Minha Clínica
+      </h1>
+      <a class="btn btn-ghost btn-sm" href="{% url 'usuario:home' %}">
+        <i class="fa-solid fa-reply"></i> Voltar
+      </a>
+    </div>
+
+    <form method="post" class="card bg-base-100 shadow border border-white/10">
+      {% csrf_token %}
+      <div class="card-body">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="form-control col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Nome Fantasia</span></label>
+            {{ form.nome_fantasia }}
+            {{ form.nome_fantasia.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Razão Social</span></label>
+            {{ form.razao_social }}
+            {{ form.razao_social.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">CNPJ</span></label>
+            {{ form.cnpj }}
+            {{ form.cnpj.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">Telefone</span></label>
+            {{ form.telefone }}
+            {{ form.telefone.errors }}
+          </div>
+
+          <div class="form-control col-span-12">
+            <label class="label"><span class="label-text">Email</span></label>
+            {{ form.email }}
+            {{ form.email.errors }}
+          </div>
+
+          <div class="form-control col-span-12">
+            <label class="label"><span class="label-text">Senha de Acesso</span></label>
+            {{ form.password }}
+            {% if form.password.help_text %}
+              <label class="label">
+                <span class="label-text-alt">{{ form.password.help_text }}</span>
+              </label>
+            {% endif %}
+            {{ form.password.errors }}
+          </div>
+
+          {% if form.plano %}
+            <div class="form-control col-span-12 md:col-span-4">
+              <label class="label"><span class="label-text">Plano</span></label>
+              {{ form.plano }}
+              {{ form.plano.errors }}
+            </div>
+          {% endif %}
+
+          {% if form.status %}
+            <div class="form-control col-span-12 md:col-span-3">
+              <label class="label"><span class="label-text">Status</span></label>
+              {{ form.status }}
+              {{ form.status.errors }}
+            </div>
+          {% endif %}
+
+          {% if form.reseta_senha %}
+            <div class="form-control col-span-12 md:col-span-4">
+              <label class="label"><span class="label-text">Redefinir senha no próximo login</span></label>
+              {{ form.reseta_senha }}
+              {{ form.reseta_senha.errors }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="alert alert-info shadow-sm mt-4">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Plano Básico libera pacientes, agenda e cadastros. Profissional e Pro liberam também enfermagem e financeiro.</span>
+        </div>
+
+        {% if object %}
+          <div class="divider text-xs text-gray-400 mt-8 mb-2">Auditoria</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-gray-500 bg-base-200 p-4 rounded-lg">
+            <div>
+              <span class="block font-semibold">Usuário Cadastro:</span>
+              {{ object.uscad|default:"-" }}
+            </div>
+            <div>
+              <span class="block font-semibold">Data Cadastro:</span>
+              {{ object.dtcad|date:"d/m/Y H:i"|default:"-" }}
+            </div>
+            <div>
+              <span class="block font-semibold">Usuário Alteração:</span>
+              {{ object.usalt|default:"-" }}
+            </div>
+            <div>
+              <span class="block font-semibold">Data Alteração:</span>
+              {{ object.dtalt|date:"d/m/Y H:i"|default:"-" }}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card-actions justify-end px-6 pb-6">
+        <button class="btn btn-primary" type="submit">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

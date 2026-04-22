@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">
+                <i class="fa-solid fa-calendar-plus"></i> Agendar Autorização
+            </h1>
+            <p class="text-sm text-base-content/70">
+                Escolha uma data e um horário disponíveis para a agenda de enfermagem.
+            </p>
+        </div>
+        <a href="{% url 'enfermagem:aprovados_list' %}" class="btn btn-ghost btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    {% if erros_agendamento %}
+    <div class="alert alert-error">
+        <div class="flex flex-col gap-1">
+            {% for erro in erros_agendamento %}
+            <span>{{ erro }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h2 class="card-title text-lg">Dados da autorização</h2>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <div class="text-xs uppercase opacity-60">Paciente</div>
+                        <div class="font-semibold">{{ autorizacao.paciente.nome }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase opacity-60">Autorização</div>
+                        <div class="font-semibold">{{ autorizacao.numero_autorizacao|default:"Não informada" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase opacity-60">Procedimento</div>
+                        <div class="font-semibold">{{ autorizacao.procedimento.nome }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase opacity-60">Status</div>
+                        <span class="{{ autorizacao.get_status_class }}">{{ autorizacao.get_status_display }}</span>
+                    </div>
+                </div>
+                {% if autorizacao.observacoes %}
+                <div>
+                    <div class="text-xs uppercase opacity-60 mb-1">Observações da autorização</div>
+                    <div class="text-sm leading-6">{{ autorizacao.observacoes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h2 class="card-title text-lg">Regras aplicadas</h2>
+                <ul class="list-disc list-inside text-sm space-y-2 text-base-content/80">
+                    <li>Somente autorizações aprovadas podem ser agendadas.</li>
+                    <li>Um horário ativo não pode ser usado por duas autorizações.</li>
+                    <li>Cada autorização pode ter apenas um agendamento ativo.</li>
+                    <li>Agendamentos válidos: segunda a sexta, das 09:00 às 17:00.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if agendamento_existente %}
+    <div class="alert alert-info">
+        <span>
+            Esta autorização já está vinculada a um agendamento em
+            <strong>{{ agendamento_existente.data_agendada|date:"d/m/Y" }}</strong>
+            às
+            <strong>{{ agendamento_existente.hora_agendamento|time:"H:i" }}</strong>
+            com status
+            <strong>{{ agendamento_existente.get_status_display }}</strong>.
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h2 class="card-title text-lg">Novo agendamento</h2>
+            <form method="post" class="space-y-4" id="agendamento-form">
+                {% csrf_token %}
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="form-control w-full">
+                        <div class="label">
+                            <span class="label-text">Data de agendamento</span>
+                        </div>
+                        <input
+                            type="date"
+                            id="data_agendamento"
+                            name="data_agendamento"
+                            value="{{ data_agendamento }}"
+                            min="{{ data_minima }}"
+                            class="input input-bordered w-full"
+                            {% if agendamento_existente %}disabled{% endif %}
+                            required
+                        >
+                    </label>
+
+                    <label class="form-control w-full">
+                        <div class="label">
+                            <span class="label-text">Horário</span>
+                        </div>
+                        <select
+                            id="hora_agendamento"
+                            name="hora_agendamento"
+                            class="select select-bordered w-full"
+                            {% if agendamento_existente %}disabled{% endif %}
+                            required
+                        >
+                            <option value="">Selecione um horário</option>
+                            {% for horario in horarios %}
+                            <option value="{{ horario }}" {% if hora_agendamento == horario %}selected{% endif %}>{{ horario }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+
+                <label class="form-control w-full">
+                    <div class="label">
+                        <span class="label-text">Observações do agendamento</span>
+                    </div>
+                    <textarea
+                        name="observacoes"
+                        rows="4"
+                        class="textarea textarea-bordered"
+                        {% if agendamento_existente %}disabled{% endif %}
+                        placeholder="Informações adicionais para a equipe de enfermagem"
+                    >{{ request.POST.observacoes }}</textarea>
+                </label>
+
+                {% if not horarios %}
+                <div class="alert alert-warning">
+                    <span>Não há horários disponíveis para a data selecionada.</span>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-end gap-2">
+                    {% if agendamento_existente and agendamento_existente.status == 'AGENDADO' %}
+                    <button
+                        type="button"
+                        class="btn btn-success btn-outline"
+                        onclick="abrirModalRealizacao()"
+                    >
+                        <i class="fa-solid fa-check"></i> Marcar como realizado
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-error btn-outline"
+                        onclick="abrirModalCancelamento()"
+                    >
+                        <i class="fa-solid fa-ban"></i> Cancelar agendamento
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary" {% if agendamento_existente %}disabled{% endif %}>
+                        <i class="fa-solid fa-floppy-disk"></i> Confirmar agendamento
+                    </button>
+                </div>
+            </form>
+            {% if agendamento_existente and agendamento_existente.status == 'AGENDADO' %}
+            <form method="post" action="{% url 'enfermagem:agendamento_cancelar' agendamento_existente.id %}" id="form-cancelar-agendamento">
+                {% csrf_token %}
+                <input type="hidden" name="observacao_status" id="observacao-cancelamento-hidden">
+            </form>
+            <form method="post" action="{% url 'enfermagem:agendamento_realizar' agendamento_existente.id %}" id="form-realizar-agendamento">
+                {% csrf_token %}
+                <input type="hidden" name="observacao_status" id="observacao-realizacao-hidden">
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if agendamento_existente and agendamento_existente.status == 'AGENDADO' %}
+<div class="modal" id="modal-cancelar-agendamento">
+    <div class="modal-box max-w-md">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+            Confirmar cancelamento
+        </h3>
+        <p class="py-4 text-sm leading-6">
+            Deseja realmente cancelar o agendamento de
+            <strong>{{ agendamento_existente.data_agendada|date:"d/m/Y" }}</strong>
+            às
+            <strong>{{ agendamento_existente.hora_agendamento|time:"H:i" }}</strong>?
+        </p>
+        <label class="form-control w-full">
+            <div class="label">
+                <span class="label-text">Observação do cancelamento</span>
+            </div>
+            <textarea
+                id="observacao-cancelamento"
+                class="textarea textarea-bordered"
+                rows="4"
+                placeholder="Informe o motivo do cancelamento"
+            ></textarea>
+        </label>
+        <div class="modal-action">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="fecharModalCancelamento()">Voltar</button>
+            <button type="button" class="btn btn-error btn-sm" onclick="confirmarCancelamento()">
+                <i class="fa-solid fa-ban"></i> Confirmar cancelamento
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal-realizar-agendamento">
+    <div class="modal-box max-w-md">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            Confirmar realização
+        </h3>
+        <p class="py-4 text-sm leading-6">
+            Deseja marcar como realizado o agendamento de
+            <strong>{{ agendamento_existente.data_agendada|date:"d/m/Y" }}</strong>
+            às
+            <strong>{{ agendamento_existente.hora_agendamento|time:"H:i" }}</strong>?
+        </p>
+        <label class="form-control w-full">
+            <div class="label">
+                <span class="label-text">Observação da realização</span>
+            </div>
+            <textarea
+                id="observacao-realizacao"
+                class="textarea textarea-bordered"
+                rows="4"
+                placeholder="Informe observações da realização"
+            ></textarea>
+        </label>
+        <div class="modal-action">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="fecharModalRealizacao()">Voltar</button>
+            <button type="button" class="btn btn-success btn-sm" onclick="confirmarRealizacao()">
+                <i class="fa-solid fa-check"></i> Confirmar realização
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if cancelamento_sucesso %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'success',
+            message: 'Agendamento cancelado com sucesso.'
+        }
+    }));
+</script>
+{% endif %}
+{% if cancelamento_erro %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'error',
+            message: 'Somente agendamentos com status Agendado podem ser cancelados.'
+        }
+    }));
+</script>
+{% endif %}
+{% if cancelamento_sem_observacao %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'error',
+            message: 'Informe uma observação para cancelar o agendamento.'
+        }
+    }));
+</script>
+{% endif %}
+{% if realizacao_sucesso %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'success',
+            message: 'Agendamento marcado como realizado com sucesso.'
+        }
+    }));
+</script>
+{% endif %}
+{% if realizacao_erro %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'error',
+            message: 'Somente agendamentos com status Agendado podem ser marcados como realizados.'
+        }
+    }));
+</script>
+{% endif %}
+{% if realizacao_sem_observacao %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'error',
+            message: 'Informe uma observação para marcar o agendamento como realizado.'
+        }
+    }));
+</script>
+{% endif %}
+<script>
+    function abrirModalCancelamento() {
+        document.getElementById('modal-cancelar-agendamento').classList.add('modal-open');
+    }
+
+    function fecharModalCancelamento() {
+        document.getElementById('modal-cancelar-agendamento').classList.remove('modal-open');
+    }
+
+    function confirmarCancelamento() {
+        document.getElementById('observacao-cancelamento-hidden').value =
+            document.getElementById('observacao-cancelamento').value;
+        document.getElementById('form-cancelar-agendamento').submit();
+    }
+
+    function abrirModalRealizacao() {
+        document.getElementById('modal-realizar-agendamento').classList.add('modal-open');
+    }
+
+    function fecharModalRealizacao() {
+        document.getElementById('modal-realizar-agendamento').classList.remove('modal-open');
+    }
+
+    function confirmarRealizacao() {
+        document.getElementById('observacao-realizacao-hidden').value =
+            document.getElementById('observacao-realizacao').value;
+        document.getElementById('form-realizar-agendamento').submit();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const dataInput = document.getElementById("data_agendamento");
+        const horaSelect = document.getElementById("hora_agendamento");
+        const horariosUrl = "{{ horarios_disponiveis_url }}";
+
+        if (!dataInput || !horaSelect || dataInput.disabled || horaSelect.disabled) {
+            return;
+        }
+
+        async function carregarHorarios(data) {
+            if (!data) {
+                horaSelect.innerHTML = '<option value="">Selecione um horário</option>';
+                return;
+            }
+
+            horaSelect.innerHTML = '<option value="">Carregando horários...</option>';
+
+            try {
+                const response = await fetch(`${horariosUrl}?data=${data}`);
+                if (!response.ok) {
+                    throw new Error("Não foi possível carregar os horários.");
+                }
+
+                const horarios = await response.json();
+                const horarioAtual = "{{ hora_agendamento }}";
+                horaSelect.innerHTML = '<option value="">Selecione um horário</option>';
+
+                if (!horarios.length) {
+                    horaSelect.innerHTML = '<option value="">Nenhum horário disponível</option>';
+                    return;
+                }
+
+                horarios.forEach((horario) => {
+                    const option = document.createElement("option");
+                    option.value = horario;
+                    option.textContent = horario;
+                    if (horarioAtual === horario) {
+                        option.selected = true;
+                    }
+                    horaSelect.appendChild(option);
+                });
+            } catch (error) {
+                horaSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                window.dispatchEvent(new CustomEvent('show-toast', {
+                    detail: {
+                        type: 'error',
+                        message: error.message
+                    }
+                }));
+            }
+        }
+
+        dataInput.addEventListener("change", function () {
+            carregarHorarios(this.value);
+        });
+    });
+</script>
+{% endblock %}

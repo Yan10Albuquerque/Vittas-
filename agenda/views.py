@@ -1,0 +1,397 @@
+from datetime import date, datetime, timedelta
+
+from django.contrib.auth.decorators import login_required
+from django.db import OperationalError, transaction
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_GET, require_POST
+from django.views.generic import TemplateView
+
+from base.models import Convenio, Especialidade, StatusAgendamento, TipoConsulta
+from base.statuses import get_status_agendamento_em_atendimento, get_status_agendamento_padrao
+from base.tenancy import ClinicaModuloRequiredMixin, filtrar_por_clinica, get_actor_name, modulo_requerido
+from medico.models import Medico, MedicoAgenda, MedicoEspecialidade
+from paciente.models import Paciente
+
+from .models import Agenda
+
+
+def _get_data_agenda(request):
+    data_param = request.GET.get('data_agenda') or request.POST.get('data_agenda')
+    if not data_param:
+        return date.today()
+
+    try:
+        return datetime.strptime(data_param, '%Y-%m-%d').date()
+    except ValueError:
+        return date.today()
+
+
+def _status_button_classes(consulta):
+    if consulta.status == Agenda.Status.BLOQUEADO:
+        return 'btn-neutral liberar'
+    if consulta.status == Agenda.Status.AGENDADO:
+        return 'btn-primary cancelar_consulta'
+    return 'btn-primary agendar'
+
+
+def _status_label_classes(status_obj):
+    if not status_obj:
+        return 'btn-ghost'
+
+    cor = (status_obj.cor or '').strip()
+    return cor or 'btn-ghost'
+
+
+class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
+    template_name = 'agenda/consultas.html'
+    modulo_requerido = 'agenda'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        data_agenda = _get_data_agenda(self.request)
+        ontem = data_agenda - timedelta(days=1)
+        amanha = data_agenda + timedelta(days=1)
+
+        medico_id = self.request.GET.get('cod_medico', '0')
+
+        medicos = filtrar_por_clinica(Medico.objects.filter(status=True), self.request)
+        medicos = medicos.order_by('nome')
+
+        medico_selecionado = None
+        if medico_id and medico_id.isdigit() and int(medico_id) > 0:
+            medico_selecionado = medicos.filter(pk=int(medico_id)).first()
+
+        agenda_qs = Agenda.objects.none()
+        possui_config_agenda = False
+        mostrar_btn_abrir_agenda = False
+        mensagem_tabela = 'SELECIONE UM MÉDICO PARA VISUALIZAR A AGENDA'
+
+        if medico_selecionado:
+            possui_config_agenda = filtrar_por_clinica(MedicoAgenda.objects.filter(
+                medico=medico_selecionado,
+                status=True,
+            ), self.request).exists()
+            agenda_qs = (
+                filtrar_por_clinica(Agenda.objects.filter(
+                    medico=medico_selecionado,
+                    data=data_agenda,
+                ), self.request)
+                .select_related(
+                    'paciente',
+                    'convenio',
+                    'tipo_consulta',
+                    'especialidade',
+                    'status_agendamento',
+                )
+                .order_by('hora')
+            )
+
+            if agenda_qs.exists():
+                mensagem_tabela = ''
+            elif not possui_config_agenda:
+                mensagem_tabela = 'O(A) MÉDICO(A) NÃO POSSUI HORÁRIOS CONFIGURADOS'
+            else:
+                mensagem_tabela = 'NÃO FOI ABERTA AGENDA PARA ESTA DATA'
+                mostrar_btn_abrir_agenda = True
+
+        agenda_consultas = []
+        status_em_atendimento = get_status_agendamento_em_atendimento(self.request)
+        for consulta in agenda_qs:
+            agenda_consultas.append(
+                {
+                    'id': consulta.id,
+                    'hora': consulta.hora,
+                    'status': consulta.status,
+                    'cod_paciente': consulta.paciente_id,
+                    'paciente_nome': consulta.paciente.nome if consulta.paciente else '',
+                    'convenio_nome': consulta.convenio.nome if consulta.convenio else '',
+                    'tipo_consulta': consulta.tipo_consulta.descricao if consulta.tipo_consulta else '',
+                    'especialidade': consulta.especialidade.descricao if consulta.especialidade else '',
+                    'cod_status_agendamento': consulta.status_agendamento_id or '',
+                    'status_agendamento': consulta.status_agendamento.descricao if consulta.status_agendamento else '',
+                    'hora_button_classes': _status_button_classes(consulta),
+                    'status_button_classes': _status_label_classes(consulta.status_agendamento),
+                }
+            )
+
+        context.update(
+            {
+                'data_agenda': data_agenda.strftime('%Y-%m-%d'),
+                'data_agenda_br': data_agenda.strftime('%d/%m/%Y'),
+                'ontem': ontem.strftime('%Y-%m-%d'),
+                'amanha': amanha.strftime('%Y-%m-%d'),
+                'cod_medico': str(medico_selecionado.pk) if medico_selecionado else '0',
+                'medico_selecionado': medico_selecionado,
+                'medicos': medicos,
+                'agenda_consultas': agenda_consultas,
+                'mensagem_tabela': mensagem_tabela,
+                'mostrar_btn_abrir_agenda': mostrar_btn_abrir_agenda,
+                'tipos_consulta': filtrar_por_clinica(
+                    TipoConsulta.objects.filter(status=True).order_by('descricao'),
+                    self.request,
+                ),
+                'convenios': filtrar_por_clinica(
+                    Convenio.objects.filter(status=True).order_by('nome'),
+                    self.request,
+                ),
+                'status_agendamento_nivel_1': filtrar_por_clinica(StatusAgendamento.objects.filter(
+                    status=True,
+                    nivel=1,
+                ).order_by('descricao'), self.request),
+                'status_agendamento_modal': filtrar_por_clinica(StatusAgendamento.objects.filter(
+                    status=True,
+                    nivel__lte=2,
+                ).order_by('nivel', 'descricao'), self.request),
+                'status_em_atendimento_id': status_em_atendimento.pk if status_em_atendimento else '',
+                'pacientes': filtrar_por_clinica(Paciente.objects.filter(status=True), self.request)
+                .select_related('convenio')
+                .order_by('nome')[:200],
+            }
+        )
+        return context
+
+
+@login_required
+@require_GET
+@modulo_requerido('agenda')
+def medico_especialidades_api(request, medico_id):
+    especialidades = filtrar_por_clinica(MedicoEspecialidade.objects.filter(
+        medico_id=medico_id,
+        status=True,
+    ), request).select_related('especialidade').order_by('especialidade__descricao')
+
+    return JsonResponse(
+        {
+            'success': True,
+            'especialidades': [
+                {
+                    'id': item.especialidade_id,
+                    'descricao': item.especialidade.descricao,
+                }
+                for item in especialidades
+            ],
+        }
+    )
+
+
+@login_required
+@require_POST
+@transaction.atomic
+@modulo_requerido('agenda')
+def agenda_api(request):
+    action = request.POST.get('funcao')
+
+    try:
+        if action == 'criar_agenda':
+            return _criar_agenda(request)
+        if action == 'addhora':
+            return _adicionar_horario(request)
+        if action == 'salvar_consulta':
+            return _salvar_consulta(request)
+        if action == 'cancelar_consulta':
+            return _cancelar_consulta(request)
+        if action == 'bloquear_horario':
+            return _bloquear_horario(request)
+        if action == 'liberar_horario':
+            return _liberar_horario(request)
+        if action == 'novo_status':
+            return _novo_status(request)
+
+        return JsonResponse({'success': False, 'message': 'Ação inválida.'}, status=400)
+    except OperationalError as exc:
+        if 'database is locked' in str(exc).lower():
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': 'Banco ocupado no momento. Tente novamente em alguns segundos.',
+                },
+                status=503,
+            )
+        raise
+
+
+def _get_agenda_or_error(request):
+    cod_agenda = request.POST.get('cod_agenda')
+    if not cod_agenda:
+        return None, JsonResponse({'success': False, 'message': 'Código da agenda não informado.'}, status=400)
+
+    agenda = filtrar_por_clinica(Agenda.objects.filter(pk=cod_agenda), request).first()
+    if not agenda:
+        return None, JsonResponse({'success': False, 'message': 'Horário da agenda não encontrado.'}, status=404)
+
+    return agenda, None
+
+
+def _criar_agenda(request):
+    data_agenda = _get_data_agenda(request)
+    medico_id = request.POST.get('cod_medico')
+    medico = get_object_or_404(filtrar_por_clinica(Medico.objects.filter(status=True), request), pk=medico_id)
+
+    horarios_base = filtrar_por_clinica(MedicoAgenda.objects.filter(
+        medico=medico,
+        status=True,
+    ), request).order_by('hora')
+
+    if not horarios_base.exists():
+        return JsonResponse({'success': False, 'message': 'O médico não possui horários configurados.'}, status=400)
+
+    horarios_existentes = set(
+        filtrar_por_clinica(Agenda.objects.filter(
+            medico=medico,
+            data=data_agenda,
+        ), request).values_list('hora', flat=True)
+    )
+
+    novos_registros = []
+    for horario in horarios_base:
+        if horario.hora in horarios_existentes:
+            continue
+        novos_registros.append(
+            Agenda(
+                clinica=medico.clinica,
+                data=data_agenda,
+                hora=horario.hora,
+                medico=medico,
+                status=Agenda.Status.DISPONIVEL,
+                uscad=get_actor_name(request),
+            )
+        )
+
+    if not novos_registros:
+        return JsonResponse({'success': False, 'message': 'A agenda desta data já está aberta.'}, status=400)
+
+    Agenda.objects.bulk_create(novos_registros)
+    return JsonResponse({'success': True, 'message': f'{len(novos_registros)} horários criados com sucesso.'})
+
+
+def _adicionar_horario(request):
+    data_agenda = _get_data_agenda(request)
+    medico_id = request.POST.get('cod_medico')
+    hora_agenda = request.POST.get('hora_agenda')
+
+    if not medico_id or not hora_agenda:
+        return JsonResponse({'success': False, 'message': 'Médico e horário são obrigatórios.'}, status=400)
+
+    medico = get_object_or_404(filtrar_por_clinica(Medico.objects.filter(status=True), request), pk=medico_id)
+    try:
+        hora = datetime.strptime(hora_agenda, '%H:%M').time()
+    except ValueError:
+        return JsonResponse({'success': False, 'message': 'Horário inválido.'}, status=400)
+
+    agenda, created = Agenda.objects.get_or_create(
+        clinica=medico.clinica,
+        data=data_agenda,
+        hora=hora,
+        medico=medico,
+        defaults={
+            'status': Agenda.Status.DISPONIVEL,
+            'uscad': get_actor_name(request),
+        },
+    )
+
+    if not created:
+        return JsonResponse({'success': False, 'message': 'Este horário já existe na agenda.'}, status=400)
+
+    return JsonResponse({'success': True, 'message': 'Horário adicionado com sucesso.', 'agenda_id': agenda.id})
+
+
+def _salvar_consulta(request):
+    agenda, error = _get_agenda_or_error(request)
+    if error:
+        return error
+
+    paciente = get_object_or_404(
+        filtrar_por_clinica(Paciente.objects.filter(status=True), request),
+        pk=request.POST.get('cod_paciente'),
+    )
+    status_agendamento_id = request.POST.get('cod_status_agendamento') or None
+    status_agendamento = None
+    if status_agendamento_id:
+        status_agendamento = filtrar_por_clinica(
+            StatusAgendamento.objects.filter(pk=status_agendamento_id, status=True),
+            request,
+        ).first()
+    if not status_agendamento:
+        status_agendamento = _get_status_agendamento_padrao(request)
+
+    agenda.paciente = paciente
+    agenda.convenio_id = request.POST.get('convenio_consulta') or paciente.convenio_id
+    agenda.tipo_consulta_id = request.POST.get('cod_tipo_consulta') or None
+    agenda.especialidade_id = request.POST.get('cod_especialidade') or None
+    agenda.status_agendamento = status_agendamento
+    agenda.status = Agenda.Status.AGENDADO
+    agenda.usalt = get_actor_name(request)
+    agenda.save()
+
+    return JsonResponse({'success': True, 'message': 'Consulta salva com sucesso.'})
+
+
+def _cancelar_consulta(request):
+    agenda, error = _get_agenda_or_error(request)
+    if error:
+        return error
+
+    agenda.paciente = None
+    agenda.convenio = None
+    agenda.tipo_consulta = None
+    agenda.especialidade = None
+    agenda.status_agendamento = None
+    agenda.status = Agenda.Status.DISPONIVEL
+    agenda.usalt = get_actor_name(request)
+    agenda.save()
+
+    return JsonResponse({'success': True, 'message': 'Consulta cancelada com sucesso.'})
+
+
+def _bloquear_horario(request):
+    agenda, error = _get_agenda_or_error(request)
+    if error:
+        return error
+
+    agenda.paciente = None
+    agenda.convenio = None
+    agenda.tipo_consulta = None
+    agenda.especialidade = None
+    agenda.status_agendamento = None
+    agenda.status = Agenda.Status.BLOQUEADO
+    agenda.usalt = get_actor_name(request)
+    agenda.save()
+
+    return JsonResponse({'success': True, 'message': 'Horário bloqueado com sucesso.'})
+
+
+def _liberar_horario(request):
+    agenda, error = _get_agenda_or_error(request)
+    if error:
+        return error
+
+    agenda.paciente = None
+    agenda.convenio = None
+    agenda.tipo_consulta = None
+    agenda.especialidade = None
+    agenda.status_agendamento = None
+    agenda.status = Agenda.Status.DISPONIVEL
+    agenda.usalt = get_actor_name(request)
+    agenda.save()
+
+    return JsonResponse({'success': True, 'message': 'Horário liberado com sucesso.'})
+
+
+def _novo_status(request):
+    agenda, error = _get_agenda_or_error(request)
+    if error:
+        return error
+
+    cod_novo_status = request.POST.get('cod_novo_status')
+    status_agendamento = get_object_or_404(
+        filtrar_por_clinica(StatusAgendamento.objects.filter(status=True), request),
+        pk=cod_novo_status,
+    )
+    agenda.status_agendamento = status_agendamento
+    agenda.usalt = get_actor_name(request)
+    agenda.save(update_fields=['status_agendamento', 'usalt', 'dtalt'])
+
+    return JsonResponse({'success': True, 'message': 'Status atualizado com sucesso.'})

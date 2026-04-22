@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Lançamento Financeiro{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
+    <h1 class="text-2xl font-semibold">
+      <i class="fa-solid fa-file-invoice-dollar mr-2"></i>
+      {% if object %}Editar Lançamento{% else %}Novo Lançamento{% endif %}
+    </h1>
+    <a class="btn btn-ghost btn-sm" href="{% url 'financeiro:lancamento_list' %}">
+      <i class="fa-solid fa-reply"></i> Voltar
+    </a>
+  </div>
+
+  <form method="post" class="card bg-base-100 shadow">
+    {% csrf_token %}
+    <div class="card-body">
+      {% if form.errors %}
+        <div class="alert alert-error mb-4">
+          <span>Verifique os campos destacados.</span>
+        </div>
+      {% endif %}
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div class="form-control col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Tipo</span></label>
+          {{ form.tipo }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Origem</span></label>
+          {{ form.origem }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Categoria</span></label>
+          {{ form.categoria }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Descrição</span></label>
+          {{ form.descricao }}
+        </div>
+
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Paciente</span></label>
+          {{ form.paciente }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Convênio</span></label>
+          {{ form.convenio }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Cliente Avulso</span></label>
+          {{ form.nome_cliente }}
+        </div>
+
+        <div class="form-control col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Forma de Pagamento</span></label>
+          {{ form.forma_pagamento }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-8">
+          <label class="label"><span class="label-text">Status</span></label>
+          {{ form.status }}
+        </div>
+
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Data Lançamento</span></label>
+          {{ form.data_lancamento }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Competência</span></label>
+          {{ form.competencia }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Vencimento</span></label>
+          {{ form.data_vencimento }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Pagamento</span></label>
+          {{ form.data_pagamento }}
+        </div>
+
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Valor</span></label>
+          {{ form.valor }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Valor Recebido/Pago</span></label>
+          {{ form.valor_recebido }}
+        </div>
+        <div class="form-control col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Observações</span></label>
+          {{ form.observacoes }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions justify-end px-6 pb-6">
+      <button class="btn btn-primary" type="submit">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

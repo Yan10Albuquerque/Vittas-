@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Agenda | Vittas{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'js/agenda-consultas.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4" x-data="agendaConsultasPage()" x-init="init()" data-agenda-page data-schedule-url="{% url 'agenda:agenda_api' %}" data-patient-url="{% url 'paciente:paciente_api' %}" data-medico-especialidades-url-template="{% url 'agenda:medico_especialidades_api' 0 %}" data-status-em-atendimento-id="{{ status_em_atendimento_id }}">
+  <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <h1 class="text-2xl font-bold border-b border-base-300 pb-1">
+      Agenda de Consultas e Exames
+    </h1>
+    <div class="text-sm breadcrumbs" aria-label="Breadcrumb">
+      <ul>
+        <li><a href="{% url 'usuario:home' %}" class="link link-primary">Home</a></li>
+        <li>Agenda de Consultas e Exames</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-4">
+    <aside class="col-span-12 md:col-span-3 lg:col-span-2" data-agenda-medicos>
+      <div class="bg-base-100 rounded-lg shadow h-full flex flex-col">
+        <div class="px-3 py-2 border-b border-base-200">
+          <h2 class="font-semibold text-lg text-center">
+            <i class="fa-solid fa-user-doctor"></i> Médicos
+          </h2>
+        </div>
+
+        <div class="max-h-[580px] overflow-y-auto" id="lista_medicos" data-role="lista-medicos">
+          {% for medico in medicos %}
+            <a
+              href="?cod_medico={{ medico.id }}&data_agenda={{ data_agenda }}"
+              class="btn btn-ghost rounded-none h-auto min-h-0 w-full px-3 py-3 border-b border-base-200 {% if cod_medico == medico.id|stringformat:'s' %}btn-active{% endif %}"
+              id="btn_medico_{{ medico.id }}"
+              data-action="selecionar-medico"
+              data-medico-id="{{ medico.id }}"
+              data-medico-nome="{{ medico.nome }}"
+            >
+              <span class="flex w-full min-w-0 items-center justify-between gap-2">
+                <span class="block min-w-0 flex-1 truncate text-left">{{ medico.nome }}</span>
+                <i class="fa-solid fa-circle-right shrink-0 text-sm"></i>
+              </span>
+            </a>
+          {% empty %}
+            <div class="px-3 py-4 text-sm text-center text-base-content/70">
+              Nenhum médico com agenda cadastrada.
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+
+    <section class="col-span-12 md:col-span-9 lg:col-span-10 border-l-0 md:border-l md:border-base-300 md:pl-4" data-agenda-conteudo>
+      <div class="grid grid-cols-12 gap-3 items-center mb-3">
+        <div class="col-span-12 md:col-span-4">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm w-full md:w-auto {% if not mostrar_btn_abrir_agenda %}btn-disabled{% endif %}"
+            id="add_agenda"
+            data-action="abrir-agenda"
+            {% if not mostrar_btn_abrir_agenda %}disabled{% endif %}
+          >
+            <i class="fa-solid fa-calendar-check"></i> Abrir Agenda
+          </button>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+          <form method="get" id="form_medico" class="w-full" data-role="form-filtro-agenda">
+            <input type="hidden" id="cod_medico" name="cod_medico" value="{{ cod_medico }}">
+            <div class="join w-full">
+              <button
+                class="btn btn-sm border-neutral-300 join-item"
+                type="submit"
+                id="dia_anterior"
+                data-action="dia-anterior"
+                formaction="?cod_medico={{ cod_medico }}&data_agenda={{ ontem }}"
+                title="Dia anterior"
+              >
+                <i class="fa-solid fa-caret-left"></i>
+              </button>
+
+              <input
+                class="input input-bordered input-sm join-item w-full text-center"
+                type="date"
+                name="data_agenda"
+                id="data_agenda"
+                value="{{ data_agenda }}"
+                data-role="input-data-agenda"
+              >
+
+              <button
+                class="btn btn-sm border-neutral-300 join-item"
+                type="submit"
+                id="dia_proximo"
+                data-action="dia-proximo"
+                formaction="?cod_medico={{ cod_medico }}&data_agenda={{ amanha }}"
+                title="Próximo dia"
+              >
+                <i class="fa-solid fa-caret-right"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-span-12 md:col-span-4 flex md:justify-end">
+          <button
+            class="btn btn-primary btn-sm w-full md:w-auto"
+            type="button"
+            id="add_novo_horario"
+            data-action="preparar-novo-horario"
+            data-modal-target="modal_addhora"
+          >
+            <i class="fa-solid fa-plus"></i> Novo Horário
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-auto bg-base-100 rounded-lg shadow max-h-[580px]" data-role="tabela-consultas-wrapper">
+        <table class="table table-zebra table-sm w-full" data-role="tabela-consultas">
+          <thead>
+            <tr>
+              <th class="w-24">Hora</th>
+              <th>Paciente</th>
+              <th class="text-center">Convênio</th>
+              <th class="text-center">Procedimento</th>
+              <th class="text-center">Especialidade</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="consultas" data-role="consultas-body">
+            {% for consulta in agenda_consultas %}
+              {% if consulta.status == 'B' %}
+                <tr class="align-middle bg-base-200" data-agenda-id="{{ consulta.id }}" data-status="{{ consulta.status }}" data-paciente-id="{{ consulta.cod_paciente|default:'' }}">
+                  <td>
+                    <button
+                      class="btn btn-xs btn-hora {{ consulta.hora_button_classes }}"
+                      type="button"
+                      id="horaConsulta{{ consulta.id }}"
+                      value="{{ consulta.id }}"
+                      data-action="agendar-horario"
+                    >
+                      {{ consulta.hora|time:"H:i" }}
+                    </button>
+                  </td>
+                  <td colspan="5" class="text-center font-medium">HORÁRIO BLOQUEADO</td>
+                </tr>
+              {% else %}
+                <tr class="align-middle" data-agenda-id="{{ consulta.id }}" data-status="{{ consulta.status }}" data-paciente-id="{{ consulta.cod_paciente|default:'' }}">
+                  <td>
+                    <button
+                      class="btn btn-xs btn-hora {{ consulta.hora_button_classes }}"
+                      type="button"
+                      id="horaConsulta{{ consulta.id }}"
+                      value="{{ consulta.id }}"
+                      data-action="agendar-horario"
+                    >
+                      {{ consulta.hora|time:"H:i" }}
+                    </button>
+                  </td>
+                  <td id="paciente{{ consulta.id }}">{{ consulta.paciente_nome|default:"-" }}</td>
+                  <td class="text-center">{{ consulta.convenio_nome|default:"-" }}</td>
+                  <td class="text-center">{{ consulta.tipo_consulta|default:"-" }}</td>
+                  <td class="text-center">{{ consulta.especialidade|default:"-" }}</td>
+                  <td class="text-center">
+                    <button
+                      class="btn btn-xs {{ consulta.status_button_classes }}"
+                      type="button"
+                      id="alterar_status{{ consulta.id }}"
+                      value="{{ consulta.id }}"
+                      data-action="alterar-status"
+                      data-codstatusconsulta="{{ consulta.cod_status_agendamento|default:'' }}"
+                    >
+                      {{ consulta.status_agendamento|default:"-" }}
+                    </button>
+                  </td>
+                </tr>
+              {% endif %}
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-6 text-base-content/70" id="agenda_mensagem_vazia" data-role="mensagem-vazia">
+                  {{ mensagem_tabela }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="modal_pacientes" class="modal" data-modal="pacientes">
+    <div class="modal-box max-w-6xl">
+      <h3 class="font-bold text-lg mb-3" id="titulo_modal_pacientes">Pesquisa de Pacientes para Agendar Consulta</h3>
+
+      <div class="grid grid-cols-12 gap-3 mb-3">
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">CPF</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="pesqcpf" name="pesqcpf" maxlength="14" data-mask="000.000.000-00" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Nome</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="pesqnome" name="pesqnome" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Celular</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="pesqcelular" name="pesqcelular" maxlength="15" data-mask="(00)00000-0000" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2 flex items-end">
+          <button class="btn btn-primary btn-sm w-full" type="button" id="pesqPaciente" data-action="pesquisar-paciente">
+            <i class="fa-solid fa-magnifying-glass"></i> Pesquisar
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-auto max-h-72 border border-base-200 rounded-lg">
+        <table class="table table-sm table-zebra w-full">
+          <thead>
+            <tr>
+              <th class="w-12 text-center"><i class="fa-solid fa-check"></i></th>
+              <th class="text-center">CPF</th>
+              <th>Nome</th>
+              <th class="text-center">Celular</th>
+              <th class="text-center">Convênio</th>
+            </tr>
+          </thead>
+          <tbody id="pacientes" data-role="lista-pacientes">
+            {% for paciente in pacientes %}
+              <tr data-paciente-id="{{ paciente.id }}">
+                <td class="text-center">
+                  <input type="radio" class="radio radio-primary radio-xs selecionado" name="paciente_selecionado" id="paciente_selecionado{{ paciente.id }}" value="{{ paciente.id }}" data-action="selecionar-paciente">
+                </td>
+                <td class="text-center">{{ paciente.cpf|default:"-" }}</td>
+                <td id="nomePaciente{{ paciente.id }}">{{ paciente.nome }}</td>
+                <td class="text-center">{{ paciente.celular|default:"-" }}</td>
+                <td class="text-center" data-convenio-id="{{ paciente.convenio_id|default:'' }}">{{ paciente.convenio.nome|default:"-" }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-base-content/70">Nenhum paciente ativo encontrado.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 text-center">
+          <button class="btn btn-warning btn-sm" id="cad_paciente" type="button" data-action="abrir-cadastro-basico" data-modal-target="modal_cadbasico">
+          Cadastrar Paciente
+        </button>
+      </div>
+
+      <div class="modal-action justify-between mt-4 border-t border-base-200 pt-3">
+        <button type="button" class="btn btn-error btn-sm bloquear" id="bloquear" data-action="bloquear-horario">
+          <i class="fa-solid fa-lock"></i> Bloquear Horário
+        </button>
+        <div class="flex gap-2">
+          <form method="dialog">
+            <button type="submit" class="btn btn-ghost btn-sm" id="cancelar">Cancelar</button>
+          </form>
+          <button type="button" class="btn btn-primary btn-sm" id="continuar" data-action="continuar-consulta" data-modal-target="modal_consulta">
+            Continuar <i class="fa-solid fa-circle-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="modal_consulta" class="modal" data-modal="consulta">
+    <div class="modal-box max-w-5xl">
+      <h3 class="font-bold text-lg mb-3" id="titulo_modal_consulta">Agendamento de Consulta</h3>
+
+      <input type="hidden" name="cod_agenda_consulta" id="cod_agenda_consulta">
+      <input type="hidden" name="data_agenda_consulta" id="data_agenda_consulta" value="{{ data_agenda }}">
+      <input type="hidden" name="hora_consulta" id="hora_consulta">
+
+      <div class="grid grid-cols-12 gap-3 mb-3">
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Médico</span></label>
+          <input type="hidden" name="cod_medico_consulta" id="cod_medico_consulta" value="{{ cod_medico }}">
+          <input class="input input-bordered input-sm w-full" type="text" name="nome_medico_consulta" id="nome_medico_consulta" value="{{ medico_selecionado.nome|default:'' }}" disabled>
+        </div>
+
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Especialidade</span></label>
+          <select class="select select-bordered select-sm w-full" id="especialidade_consulta" name="especialidade_consulta" data-role="especialidade-consulta">
+            <option value="">Selecione</option>
+          </select>
+        </div>
+
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Tipo de Consulta</span></label>
+          <select class="select select-bordered select-sm w-full" id="tipo_consulta" name="tipo_consulta">
+            {% for tipo in tipos_consulta %}
+              <option value="{{ tipo.id }}">{{ tipo.descricao }}</option>
+            {% empty %}
+              <option value="">Sem tipo de consulta</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-3 mb-3">
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Paciente</span></label>
+          <input type="hidden" name="cod_paciente_consulta" id="cod_paciente_consulta">
+          <input class="input input-bordered input-sm w-full" type="text" name="nome_paciente_consulta" id="nome_paciente_consulta" disabled>
+        </div>
+
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Convênio</span></label>
+          <select class="select select-bordered select-sm w-full" id="convenio_consulta" name="convenio_consulta">
+            {% for convenio in convenios %}
+              <option value="{{ convenio.id }}">{{ convenio.nome }}</option>
+            {% empty %}
+              <option value="">Sem convênio</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Status</span></label>
+          <select class="select select-bordered select-sm w-full" id="status_agendamento_consulta" name="status_agendamento_consulta">
+            {% for status in status_agendamento_nivel_1 %}
+              <option value="{{ status.id }}">{{ status.descricao }}</option>
+            {% empty %}
+              <option value="">Sem status disponível</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-action justify-between mt-4 border-t border-base-200 pt-3">
+        <button type="button" class="btn btn-error btn-sm bloquear" id="bloquear2" data-action="bloquear-horario">
+          <i class="fa-solid fa-lock"></i> Bloquear Horário
+        </button>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-ghost btn-sm" id="voltar" data-action="voltar-pacientes" data-modal-target="modal_pacientes">
+            <i class="fa-solid fa-reply"></i> Voltar para Pacientes
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="salvar_consulta" data-action="salvar-consulta">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="modalStatus" class="modal" data-modal="status">
+    <div class="modal-box max-w-md">
+      <h3 class="font-semibold text-center text-lg mb-4" id="title_modal_status">Alterar Status do Atendimento</h3>
+      <input type="hidden" id="cod_agenda_status" name="cod_agenda_status" value="">
+
+      <div class="flex flex-col gap-2" data-role="lista-status">
+        {% for status in status_agendamento_modal %}
+          <button
+            class="btn btn-sm novo_status {{ status.cor }}"
+            id="novo_status{{ status.id }}"
+            type="button"
+            value="{{ status.id }}"
+            data-action="definir-status"
+          >
+            {{ status.descricao }}
+          </button>
+        {% empty %}
+          <div class="alert alert-warning">Nenhum status disponível para alteração.</div>
+        {% endfor %}
+      </div>
+
+      <div class="modal-action">
+        <form method="dialog">
+          <button type="submit" class="btn btn-ghost btn-sm">Fechar</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="modal_cadbasico" class="modal" data-modal="cadastro-basico">
+    <div class="modal-box max-w-lg">
+      <h3 class="font-semibold text-lg mb-3" id="title_modal_cadbasico">Cadastro Básico</h3>
+
+      <input type="hidden" id="cod_agenda_cadbasico" name="cod_agenda_cadbasico" value="">
+      <input type="hidden" id="cod_paciente_cadbasico" name="cod_paciente_cadbasico" value="">
+
+      <div class="grid grid-cols-12 gap-3">
+        <div class="col-span-12">
+          <label class="label" for="nome_cadbasico">
+            <span class="label-text">Nome <span class="text-error">*</span> <span id="resposta_cadbasico"></span></span>
+          </label>
+          <input class="input input-bordered input-sm w-full" type="text" id="nome_cadbasico" name="nome_cadbasico" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Celular <span class="text-error">*</span></span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="celular_cadbasico" name="celular_cadbasico" maxlength="15" data-mask="(00)00000-0000" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">CPF</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="cpf_cadbasico" name="cpf_cadbasico" maxlength="14" data-mask="000.000.000-00" autocomplete="off">
+        </div>
+
+        <div class="col-span-12">
+          <label class="label"><span class="label-text">Convênio</span></label>
+          <select class="select select-bordered select-sm w-full" id="convenio_cadbasico" name="convenio_cadbasico">
+            {% for convenio in convenios %}
+              <option value="{{ convenio.id }}">{{ convenio.nome }}</option>
+            {% empty %}
+              <option value="">Sem convênio</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-action justify-between mt-4">
+        <button class="btn btn-ghost btn-sm" type="button" id="voltar_cadbasico" data-action="voltar-pacientes" data-modal-target="modal_pacientes">
+          <i class="fa-solid fa-reply"></i> Voltar
+        </button>
+
+        <div class="flex gap-2">
+          <button class="btn btn-primary btn-sm" type="button" id="salvar_cadbasico" data-action="salvar-cadastro-basico">
+            <i class="fa-solid fa-save"></i> Salvar
+          </button>
+          <button class="btn btn-success btn-sm hidden" type="button" id="continuar_cadbasico" data-action="continuar-cadastro-basico" data-modal-target="modal_consulta">
+            Continuar <i class="fa-solid fa-circle-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="modal_cadcompleto" class="modal" data-modal="cadastro-completo">
+    <div class="modal-box w-11/12 max-w-7xl p-4">
+      <h3 class="font-semibold text-lg mb-1" id="title_modal_cadcompleto">Confirmar/Atualizar Cadastro</h3>
+
+      <input type="hidden" id="cod_agenda_cadcompleto" name="cod_agenda_cadcompleto" value="">
+
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 md:col-span-1">
+          <label class="label"><span class="label-text">Código</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="cod_paciente" name="cod_paciente" readonly>
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">CPF</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="cpf" name="cpf" maxlength="14" data-mask="000.000.000-00" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-5">
+          <label class="label"><span class="label-text">Nome</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="nome_paciente" name="nome_paciente" maxlength="80" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Celular</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="celular" name="celular" maxlength="15" data-mask="(00)00000-0000" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Outro Telefone</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="telefone" name="telefone" maxlength="15" data-mask="(00)00000-0000" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Email</span></label>
+          <input class="input input-bordered input-sm w-full" type="email" id="email" name="email" autocomplete="off">
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="label"><span class="label-text">Doc. Identidade</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="documento" name="documento" maxlength="45" autocomplete="off">
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="label"><span class="label-text">Nascimento</span></label>
+          <input class="input input-bordered input-sm w-full" type="date" id="nascimento" name="nascimento">
+        </div>
+        <div class="col-span-6 md:col-span-1">
+          <label class="label"><span class="label-text">Peso</span></label>
+          <input class="input input-bordered input-sm w-full" type="number" step="0.01" id="peso" name="peso">
+        </div>
+        <div class="col-span-6 md:col-span-1">
+          <label class="label"><span class="label-text">Altura</span></label>
+          <input class="input input-bordered input-sm w-full" type="number" step="0.01" id="altura" name="altura">
+        </div>
+        <div class="col-span-6 md:col-span-1">
+          <label class="label"><span class="label-text">Sexo</span></label>
+          <select class="select select-bordered select-sm w-full" id="sexo" name="sexo">
+            <option value="">-</option>
+            <option value="MASCULINO">MASC</option>
+            <option value="FEMININO">FEM</option>
+            <option value="OUTRO">OUTRO</option>
+          </select>
+        </div>
+        <div class="col-span-6 md:col-span-2">
+          <label class="label"><span class="label-text">Profissão</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="profissao" name="profissao" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-1">
+          <label class="label"><span class="label-text" id="label_cep">CEP</span></label>
+          <input class="input input-bordered input-sm w-full text-center" type="text" id="cep" name="cep" maxlength="9" data-mask="00000-000" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-3">
+          <label class="label"><span class="label-text">Logradouro</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="endereco" name="endereco" autocomplete="off">
+        </div>
+        <div class="col-span-4 md:col-span-1">
+          <label class="label"><span class="label-text">Número</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="numero" name="numero" autocomplete="off">
+        </div>
+        <div class="col-span-8 md:col-span-2">
+          <label class="label"><span class="label-text">Complemento</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="complemento" name="complemento" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Bairro</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="bairro" name="bairro" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-2">
+          <label class="label"><span class="label-text">Cidade</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="cidade" name="cidade" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-1">
+          <label class="label"><span class="label-text">Estado</span></label>
+          <input class="input input-bordered input-sm w-full text-center uppercase" type="text" id="estado" name="estado" maxlength="2" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Nome da Mãe</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="mae" name="mae" autocomplete="off">
+        </div>
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Nome do Pai</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" id="pai" name="pai" autocomplete="off">
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+          <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12">
+              <label class="label"><span class="label-text">Convênio</span></label>
+              <select class="select select-bordered select-sm w-full" id="convenio" name="convenio">
+                {% for convenio in convenios %}
+                  <option value="{{ convenio.id }}">{{ convenio.nome }}</option>
+                {% empty %}
+                  <option value="">Sem convênio</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-span-12 md:col-span-6">
+              <label class="label"><span class="label-text">Carteira Convênio</span></label>
+              <input class="input input-bordered input-sm w-full" type="text" id="num_carteira" name="num_carteira" autocomplete="off">
+            </div>
+            <div class="col-span-12 md:col-span-6">
+              <label class="label"><span class="label-text">Carteira SUS</span></label>
+              <input class="input input-bordered input-sm w-full" type="text" id="carteira_sus" name="carteira_sus" autocomplete="off">
+            </div>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8">
+          <label class="label"><span class="label-text">Observações / Anotações</span></label>
+          <textarea class="textarea textarea-bordered textarea-sm w-full" id="obs" name="obs" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-action justify-between mt-0 border-t border-base-200 pt-3">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm" type="submit">
+            <i class="fa-solid fa-reply"></i> Voltar
+          </button>
+        </form>
+
+        <div class="flex items-center gap-3">
+          <button class="btn btn-success btn-sm" id="confirmar_cadcompleto" type="button" data-action="confirmar-cadastro-completo">
+            <i class="fa-solid fa-circle-check"></i> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="modal_addhora" class="modal" data-modal="novo-horario">
+    <div class="modal-box max-w-md">
+      <h3 class="font-semibold text-lg mb-3">Adicionar Novo Horário</h3>
+
+      <input class="input input-bordered input-sm w-full" type="hidden" name="cod_medico_addhora" id="cod_medico_addhora" value="{{ cod_medico }}">
+
+      <div class="space-y-3">
+        <div>
+          <label class="label"><span class="label-text">Médico</span></label>
+          <input class="input input-bordered input-sm w-full" type="text" name="nome_medico_addhora" id="nome_medico_addhora" value="{{ medico_selecionado.nome|default:'' }}" disabled>
+        </div>
+
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <div class="col-span-7">
+            <label class="label" for="nova_hora_addhora"><span class="label-text">Novo Horário</span></label>
+          </div>
+          <div class="col-span-5">
+            <input class="input input-bordered input-sm w-full text-center" type="time" name="nova_hora_addhora" id="nova_hora_addhora" value="08:00">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-action justify-between mt-4">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm" type="submit">
+            <i class="fa-solid fa-reply"></i> Voltar
+          </button>
+        </form>
+
+        <button class="btn btn-primary btn-sm" type="button" id="salvar_addhora" data-action="adicionar-horario">
+          <i class="fa-solid fa-plus"></i> Adicionar
+        </button>
+      </div>
+    </div>
+  </dialog>
+</div>
+{% endblock %}

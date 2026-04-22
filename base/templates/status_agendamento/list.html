@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Status de Agendamento | Vittas{% endblock %}
+
+{% block content %}
+<div x-data="statusAgendamentoCrud()" @keydown.escape.window="closeModal()">
+  <div class="container mx-auto p-4">
+  {% csrf_token %}
+
+  <div class="flex flex-col md:flex-row justify-between items-center mb-3 gap-4">
+    <h1 class="text-2xl font-bold text-base-content"><i class="fa-solid fa-list-check"></i> Status de Agendamento</h1>
+    <button @click="openModal('{% url 'base:status_agendamento_create' %}')" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Novo Status
+    </button>
+  </div>
+
+  <div class="bg-base-100 p-4 rounded-box shadow-sm border border-base-200 mb-6">
+    <form method="get" class="flex gap-2">
+      <div class="join w-full max-w-lg">
+        <input type="text" name="busca" value="{{ request.GET.busca }}"
+          class="input input-bordered input-sm join-item w-full" placeholder="Buscar por descrição ou classe de cor...">
+        <button type="submit" class="btn btn-primary btn-sm join-item">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+      {% if request.GET.busca %}
+        <a href="{% url 'base:status_agendamento_list' %}" class="btn btn-ghost btn-sm text-error" title="Limpar filtro">
+          <i class="fas fa-times"></i>
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="overflow-x-auto bg-base-100 rounded-box shadow-sm border border-base-200">
+    <table class="table table-zebra table-sm w-full">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Cor</th>
+          <th>Nível</th>
+          <th>Status</th>
+          <th class="text-center w-24">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for status in status_agendamentos %}
+        <tr class="hover">
+          <td class="font-bold">{{ status.descricao }}</td>
+          <td>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-sm {{ status.cor|default:'badge-ghost' }}">{{ status.cor }}</span>
+            </div>
+          </td>
+          <td>{{ status.nivel }}</td>
+          <td>
+            {% if status.status %}
+            <div class="badge badge-success badge-sm gap-1 text-white"><i class="fas fa-check"></i> Ativo</div>
+            {% else %}
+            <div class="badge badge-ghost badge-sm gap-1">Inativo</div>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <div class="join">
+              <button @click="openModal('{% url 'base:status_agendamento_update' status.pk %}')"
+                class="btn btn-sm btn-ghost join-item text-primary tooltip" data-tip="Editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button @click="deleteItem('{% url 'base:status_agendamento_delete' status.pk %}')"
+                class="btn btn-sm btn-ghost join-item text-error tooltip" data-tip="Excluir">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-12 text-base-content/50">
+            <i class="fas fa-folder-open text-4xl mb-3 block opacity-20"></i>
+            Nenhum status de agendamento encontrado.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="flex justify-center mt-6">
+    <div class="join">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&busca={{ request.GET.busca }}"
+        class="join-item btn btn-sm">«</a>
+      {% else %}
+      <button class="join-item btn btn-sm btn-disabled">«</button>
+      {% endif %}
+
+      <button class="join-item btn btn-sm no-animation">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</button>
+
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&busca={{ request.GET.busca }}" class="join-item btn btn-sm">»</a>
+      {% else %}
+      <button class="join-item btn btn-sm btn-disabled">»</button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <dialog id="status_agendamento_modal" class="modal" x-ref="modal" x-cloak>
+    <div class="modal-box w-11/12 max-w-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <i :class="activeUrl.includes('editar') ? 'fas fa-edit text-warning' : 'fas fa-plus-circle text-primary'"></i>
+          <span x-text="modalTitle"></span>
+        </h3>
+        <form method="dialog">
+          <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </form>
+      </div>
+
+      <div id="modal-content" x-ref="modalContent" class="min-h-[200px]" x-cloak>
+        <template x-if="isModalLoading">
+          <div class="flex flex-col items-center justify-center py-12 h-full text-base-content/30">
+            <span class="loading loading-spinner loading-lg mb-2"></span>
+            <span>Carregando...</span>
+          </div>
+        </template>
+        <div x-show="!isModalLoading" x-html="modalHtml"></div>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
+
+  </div>
+</div>
+
+<script>
+  function statusAgendamentoCrud() {
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop().split(";").shift();
+      }
+      return "";
+    };
+
+    return {
+      modalHtml: "",
+      modalTitle: "Cadastro",
+      activeUrl: "",
+      isModalLoading: false,
+      isSubmitting: false,
+      csrfToken: "",
+
+      init() {
+        this.csrfToken = this.getCsrfToken();
+      },
+
+      getCsrfToken() {
+        const input = this.$root.querySelector("[name=csrfmiddlewaretoken]");
+        if (input && input.value) {
+          return input.value;
+        }
+        return getCookie("csrftoken");
+      },
+
+      async openModal(url) {
+        this.activeUrl = url;
+        this.modalTitle = url.includes("editar")
+          ? "Editar Status de Agendamento"
+          : "Novo Status de Agendamento";
+        this.isModalLoading = true;
+        this.modalHtml = "";
+
+        if (this.$refs.modal) {
+          this.$refs.modal.showModal();
+        }
+
+        await this.fetchForm(url);
+      },
+
+      closeModal() {
+        if (this.$refs.modal && this.$refs.modal.open) {
+          this.$refs.modal.close();
+        }
+      },
+
+      async fetchForm(url) {
+        try {
+          const response = await fetch(url, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          this.modalHtml = await response.text();
+          this.refreshModalContent();
+        } catch (error) {
+          this.modalHtml =
+            '<div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i> Erro ao carregar o formulário. Tente novamente.</div>';
+          this.refreshModalContent();
+          console.error("Error fetching form:", error);
+        } finally {
+          this.isModalLoading = false;
+        }
+      },
+
+      refreshModalContent() {
+        this.$nextTick(() => {
+          if (window.Alpine && this.$refs.modalContent) {
+            window.Alpine.initTree(this.$refs.modalContent);
+          }
+        });
+      },
+
+      async submitForm(formElement) {
+        this.isSubmitting = true;
+        const formData = new FormData(formElement);
+
+        try {
+          const response = await fetch(this.activeUrl, {
+            method: "POST",
+            body: formData,
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            this.closeModal();
+
+            window.dispatchEvent(new CustomEvent('show-toast', {
+              detail: {
+                type: 'success',
+                message: 'Status de agendamento salvo com sucesso!'
+              }
+            }));
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else if (data.html) {
+            this.modalHtml = data.html;
+            this.refreshModalContent();
+          } else {
+            this.closeModal();
+
+            window.dispatchEvent(new CustomEvent('show-toast', {
+              detail: {
+                type: 'error',
+                message: 'Falha ao salvar o status de agendamento. Verifique os dados e tente novamente.'
+              }
+            }));
+          }
+        } catch (error) {
+          console.error(error);
+          this.closeModal();
+
+          window.dispatchEvent(new CustomEvent('show-toast', {
+            detail: {
+              type: 'error',
+              message: 'Erro de conexão ao salvar. Verifique sua internet e tente novamente.'
+            }
+          }));
+        } finally {
+          this.isSubmitting = false;
+        }
+      },
+
+      deleteItem(url) {
+        window.openConfirmDialog(url, () => {
+          window.dispatchEvent(new CustomEvent('show-toast', {
+            detail: {
+              type: 'success',
+              message: 'Status de agendamento excluído com sucesso!'
+            }
+          }));
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        });
+      },
+    };
+  }
+</script>
+{% endblock %}

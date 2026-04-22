@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Filtro --> 
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">
+        <i class="fa-solid fa-hand-holding-medical"></i> Procedimentos
+        </h1>
+        <button class="btn btn-primary btn-sm" onclick="openModal()">
+            <i class="fa-solid fa-user-plus"></i> Novo Procedimento
+        </button>
+    </div>
+    
+    <div class="bg-base-100 p-4 rounded-lg shadow">
+        <form method="get" class="flex gap-2">
+        <input type="text" name="busca" value="{{ request.GET.busca }}" 
+            placeholder="Buscar por nome, código..." class="input input-bordered input-sm w-full max-w-xs" />
+        <button type="submit" class="btn btn-ghost btn-sm">
+            <i class="fas fa-search"></i> Buscar
+        </button>
+        {% if request.GET.busca %}
+        <a href="{% url 'enfermagem:procedimento_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+        {% endif %}
+        </form>
+    </div>
+
+    <!-- Tabela -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+      <table class="table table-zebra table-sm w-full">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for procedimento in procedimentos %}
+                <tr>
+                    <td>{{ procedimento.id }}</td>
+                    <td>{{ procedimento.nome }}</td>
+                    <td>{{ procedimento.descricao }}</td>
+                    <td>
+                        <button 
+                            class="btn btn-ghost btn-sm btn-ver"
+                            data-id="{{ procedimento.id }}"
+                            data-nome="{{ procedimento.nome|escapejs }}"
+                            data-descricao="{{ procedimento.descricao }}">
+                            <i class="fa-solid fa-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-ghost btn-sm text-error" onclick="deleteProcedimento('{{ procedimento.id }}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-base-content/70">
+                        Nenhum procedimento encontrado.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- exclusao -->
+    <div id="modal" class="modal" >
+        <div class="modal-box ">
+            <h2 class="text-lg font-semibold mb-4">
+            Confirmar exclusão
+            </h2>
+            <p class="mb-6">
+            Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.
+            </p>
+            <div class="flex justify-end gap-3">
+                <button onclick="fecharModal()" 
+                    class="px-4 py-2 bg-gray-300 rounded">
+                    Cancelar
+                </button>
+
+                <a id="confirmDeleteLink"
+                    class="px-4 py-2 bg-red-600 text-white rounded">
+                    Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="novoProcedimentoModal" tabindex="-1">
+         <div class="modal-box">
+            <h2 class="text-2xl font-bold">Novo Procedimento</h2>
+                <form method="post" class="flex flex-col gap-4" id="formProcedimento">
+                    {% csrf_token %}
+                    <div class="form-control">
+                        <label class="label">Nome</label>
+                        <input type="text" name="nome" class="input input-bordered" required />
+                    </div>
+                    <div class="form-control">
+                        <label class="label">Descrição</label>
+                        <textarea name="descricao" class="textarea textarea-bordered" placeholder="Observação opcional"></textarea>
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">
+                        Salvar
+                        </button>
+
+                        <button type="button" class="btn" onclick="closeModal()">
+                        Cancelar
+                        </button>
+                    </div>
+                </form>  
+        </div>
+    </div>
+
+    <div class="modal" id="modalEdit">
+            <div class="modal-box">
+                <h2 class="text-2xl font-bold">Detalhes do Procedimento</h2>
+                    <form method="post" class="flex flex-col gap-4" id="formProcedimentoEdit">
+                        {% csrf_token %}
+                        <div class="form-control">
+                            <label class="label">Nome</label>
+                            <input type="text" name="nome" id="editNome" class="input input-bordered" required />
+                        </div>
+                        <div class="form-control">
+                            <label class="label">Descrição</label>
+                            <textarea name="descricao" id="editDescricao" class="textarea textarea-bordered" placeholder="Observação opcional"></textarea>
+                        </div>
+                        <div class="modal-action">
+                            <button type="submit" class="btn btn-primary">
+                            Salvar
+                            </button> 
+    
+                            <button type="button" class="btn" onclick="closeModalEdit()">
+                            Cancelar
+                            </button>
+                        </div>
+                    </form>  
+            </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+
+<script>
+    function openModalEdit(data) {
+        document.getElementById('modalEdit').classList.add('modal-open');
+        document.getElementById('editNome').value = data.nome;
+        document.getElementById('editDescricao').value = data.descricao  || '';
+        form = document.querySelector('#formProcedimentoEdit');
+        form.action = "{% url 'enfermagem:procedimento_update' 0 %}".replace('0', data.id);
+    }
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-ver');
+        if (!btn) return;
+
+        const data = {
+            id: btn.dataset.id,
+            nome: btn.dataset.nome,
+            descricao: btn.dataset.descricao || ''
+        };
+
+        openModalEdit(data);
+    });
+    function closeModalEdit() {
+        document.getElementById('modalEdit').classList.remove('modal-open');
+    }
+
+
+    function openModal() {
+        document.getElementById('novoProcedimentoModal').classList.add('modal-open');
+        form = document.querySelector('#formProcedimento');
+        form.action = "{% url 'enfermagem:procedimento_create' %}";
+    }
+    function closeModal() {
+        document.getElementById('novoProcedimentoModal').classList.remove('modal-open');
+    }
+
+    function deleteProcedimento(id) {
+        document.getElementById('modal').classList.add('modal-open');
+        document.getElementById('confirmDeleteLink').href = "{% url 'enfermagem:procedimento_delete' 0 %}".replace('0', id);
+    }
+    function fecharModal() {
+        document.getElementById('modal').classList.remove('modal-open');
+    }
+</script>
+  
+{% endblock  %}

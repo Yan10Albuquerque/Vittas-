@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">
+                <i class="fa-solid fa-clipboard-check"></i> Autorizações Aprovadas
+            </h1>
+            <p class="text-sm text-base-content/70">
+                Somente autorizações aprovadas aparecem para o agendamento.
+            </p>
+        </div>
+    </div>
+
+    <div class="bg-base-100 p-4 rounded-lg shadow">
+        <form method="get" class="flex flex-col gap-3 md:flex-row">
+            <input
+                type="text"
+                name="busca"
+                value="{{ request.GET.busca }}"
+                placeholder="Buscar por paciente ou procedimento"
+                class="input input-bordered input-sm w-full"
+            />
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-ghost btn-sm">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                {% if request.GET.busca %}
+                <a href="{% url 'enfermagem:aprovados_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+        <table class="table table-zebra table-sm w-full">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Procedimento</th>
+                    <th>Status</th>
+                    <th>Agendamento</th>
+                    <th class="text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for autorizacao in autorizacoes_aprovadas %}
+                <tr>
+                    <td>
+                        <div class="font-bold">{{ autorizacao.paciente }}</div>
+                        <div class="text-sm opacity-50">{{ autorizacao.paciente.email|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div>{{ autorizacao.procedimento.nome }}</div>
+                        <div class="text-xs opacity-60">{{ autorizacao.procedimento.descricao }}</div>
+                    </td>
+                    <td>
+                        <span class="{{ autorizacao.status_exibicao_class }}">
+                            {{ autorizacao.status_exibicao }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if autorizacao.agendamento_ativo %}
+                        <div class="font-semibold text-success">
+                            {{ autorizacao.agendamento_ativo.data_agendada|date:"d/m/Y" }} às {{ autorizacao.agendamento_ativo.hora_agendamento|time:"H:i" }}
+                        </div>
+                        <div class="text-xs opacity-70">
+                            {{ autorizacao.agendamento_ativo.get_status_display }}
+                        </div>
+                        {% else %}
+                        <span class="text-sm opacity-60">Ainda não agendada</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        {% if autorizacao.pode_agendar %}
+                        <a href="{% url 'enfermagem:agendamento_create' autorizacao.id %}" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-calendar-plus"></i> Agendar
+                        </a>
+                        {% else %}
+                        <a href="{% url 'enfermagem:agendamento_create' autorizacao.id %}" class="btn btn-outline btn-sm">
+                            <i class="fa-solid fa-calendar-check"></i> Ver agendamento
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-base-content/70">
+                        Nenhuma autorização aprovada encontrada.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if agendamento_sucesso %}
+<script>
+    window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+            type: 'success',
+            message: 'Agendamento realizado com sucesso.'
+        }
+    }));
+</script>
+{% endif %}
+{% endblock %}

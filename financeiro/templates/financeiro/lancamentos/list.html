@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Lançamentos Financeiros{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="vittas-page-header flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="page-title text-3xl font-bold"><i class="fa-solid fa-wallet mr-2"></i>Lançamentos Financeiros</h1>
+    <div class="flex gap-2">
+      <a href="{% url 'financeiro:categoria_list' %}" class="btn btn-ghost btn-sm">Categorias</a>
+      <a href="{% url 'financeiro:lancamento_create' %}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-plus"></i> Novo Lançamento
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="stat bg-base-100 rounded-box shadow">
+      <div class="stat-title">Total Filtrado</div>
+      <div class="stat-value text-primary text-2xl">R$ {{ total_periodo|floatformat:2 }}</div>
+    </div>
+    <div class="stat bg-base-100 rounded-box shadow">
+      <div class="stat-title">Recebido/Pago</div>
+      <div class="stat-value text-success text-2xl">R$ {{ total_recebido|floatformat:2 }}</div>
+    </div>
+    <div class="stat bg-base-100 rounded-box shadow">
+      <div class="stat-title">Em Aberto</div>
+      <div class="stat-value text-warning text-2xl">R$ {{ total_em_aberto|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <div class="bg-base-100 p-4 rounded-box shadow border border-white/10">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+      <input type="text" name="busca" value="{{ request.GET.busca }}" placeholder="Buscar cliente ou descrição" class="input input-bordered input-sm w-full">
+      <select name="tipo" class="select select-bordered select-sm w-full">
+        <option value="">Todos os tipos</option>
+        {% for value, label in tipos %}
+          <option value="{{ value }}" {% if request.GET.tipo == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="select select-bordered select-sm w-full">
+        <option value="">Todos os status</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="categoria" class="select select-bordered select-sm w-full">
+        <option value="">Todas as categorias</option>
+        {% for categoria in categorias %}
+          <option value="{{ categoria.pk }}" {% if request.GET.categoria == categoria.pk|stringformat:'s' %}selected{% endif %}>{{ categoria.descricao }}</option>
+        {% endfor %}
+      </select>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm w-full">Filtrar</button>
+        <a href="{% url 'financeiro:lancamento_list' %}" class="btn btn-ghost btn-sm">Limpar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="overflow-x-auto bg-base-100 rounded-box shadow border border-white/10">
+    <table class="table table-zebra table-sm">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Cliente</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th>Vencimento</th>
+          <th>Status</th>
+          <th>Valor</th>
+          <th class="text-right">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lancamento in lancamentos %}
+          <tr>
+            <td>{{ lancamento.get_tipo_display }}</td>
+            <td>{{ lancamento.cliente_display }}</td>
+            <td>
+              <div class="font-semibold">{{ lancamento.descricao }}</div>
+              <div class="text-xs text-base-content/60">{{ lancamento.get_origem_display }}</div>
+            </td>
+            <td>{{ lancamento.categoria.descricao }}</td>
+            <td>{{ lancamento.data_vencimento|date:"d/m/Y" }}</td>
+            <td><span class="badge badge-sm">{{ lancamento.get_status_display }}</span></td>
+            <td>R$ {{ lancamento.valor|floatformat:2 }}</td>
+            <td class="text-right">
+              <div class="flex justify-end gap-2">
+                <a href="{% url 'financeiro:lancamento_update' lancamento.pk %}" class="btn btn-ghost btn-xs">Editar</a>
+                {% if lancamento.status != 'PAGO' and lancamento.status != 'CANCELADO' %}
+                  <form method="post" action="{% url 'financeiro:lancamento_baixar' lancamento.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="valor_pago" value="{{ lancamento.valor }}">
+                    <button type="submit" class="btn btn-success btn-xs">Baixar</button>
+                  </form>
+                  <form method="post" action="{% url 'financeiro:lancamento_cancelar' lancamento.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-error btn-xs">Cancelar</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-base-content/60 py-4">Nenhum lançamento encontrado.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+    <div class="join justify-center mt-4">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">«</a>
+      {% else %}
+        <button class="join-item btn btn-sm btn-disabled">«</button>
+      {% endif %}
+      <button class="join-item btn btn-sm">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</button>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">»</a>
+      {% else %}
+        <button class="join-item btn btn-sm btn-disabled">»</button>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

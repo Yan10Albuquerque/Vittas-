@@ -1,0 +1,32 @@
+<form method="post" @submit.prevent="submitForm($el)" class="space-y-4">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-error text-sm">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Verifique os erros abaixo.</span>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-4">
+        <div class="form-control">
+            <label class="label"><span class="label-text">Descrição</span></label>
+            {{ form.descricao }}
+            {% if form.descricao.errors %}<span class="text-error text-xs mt-1">{{ form.descricao.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4">
+                <span class="label-text">Ativo</span>
+                {{ form.status }}
+            </label>
+        </div>
+    </div>
+
+    <div class="modal-action">
+        <button type="button" class="btn btn-ghost btn-sm" @click="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm" :class="{'loading': isSubmitting}" :disabled="isSubmitting">
+            <i class="fas fa-save"></i> 
+            <span x-text="isSubmitting ? 'Salvando...' : 'Salvar'"></span>
+        </button>
+    </div>
+</form>

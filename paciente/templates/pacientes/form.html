@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+{% load static l10n %}
+
+{% block title %}
+{% if object %}Paciente: {{ object.nome }}{% else %}Novo Paciente{% endif %} | Vittas
+{% endblock %}
+
+{% block content %}
+<div class="w-full p-0" x-data="pacienteFormCep('{{ active_tab|default:'cadastro' }}')">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row justify-between items-center mb-3 gap-4">
+    <div class="flex items-center gap-2">
+      <a href="{% url 'paciente:paciente_list' %}" class="btn btn-ghost btn-circle btn-sm">
+        <i class="fas fa-reply"></i>
+      </a>
+      <h1 class="text-2xl font-bold">
+        Cadastro de Paciente
+        {% if object %}<span class="text-base-content/60 text-lg">({{ object.nome }})</span>{% endif %}
+      </h1>
+    </div>
+    <div class="text-sm breadcrumbs hidden md:block">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li>Cadastros</li>
+        <li><a href="{% url 'paciente:paciente_list' %}">Pacientes</a></li>
+        <li>{% if object %}Edição{% else %}Novo{% endif %}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div role="tablist" class="tabs tabs-lifted tabs-lg mb-0 z-10 relative">
+    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'cadastro' }"
+      @click.prevent="activeTab = 'cadastro'">
+      <i class="fas fa-user-large mr-2"></i> Cadastro
+    </a>
+
+    {% if object %}
+    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'vacinas' }" @click.prevent="activeTab = 'vacinas'">
+      <i class="fas fa-syringe mr-2"></i> Vacinas
+    </a>
+    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'medicacao' }"
+      @click.prevent="activeTab = 'medicacao'">
+      <i class="fas fa-pills mr-2"></i> Medicação
+    </a>
+    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'exames' }" @click.prevent="activeTab = 'exames'">
+      <i class="fas fa-file-waveform mr-2"></i> Exames
+    </a>
+    <a role="tab" class="tab" :class="{ 'tab-active': activeTab === 'consultas' }"
+      @click.prevent="activeTab = 'consultas'">
+      <i class="fas fa-clock-rotate-left mr-2"></i> Histórico
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Tab Content -->
+  <div class="bg-base-100 border-base-300 rounded-b-box border p-6 min-h-[500px]">
+
+    <!-- Tab: Cadastro -->
+    <div x-show="activeTab === 'cadastro'">
+      <form method="post" id="form-paciente">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="alert alert-error mb-4">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Verifique os erros no formulário.</span>
+          {{ form.errors }}
+        </div>
+        {% endif %}
+
+        <!-- Linha 1 -->
+        <div class="grid grid-cols-12 gap-4 mb-2">
+          <!-- ID (Apenas leitura) -->
+          <div class="col-span-12 md:col-span-1">
+            <label class="label"><span class="label-text">Código</span></label>
+            <input type="text" class="input input-bordered input-sm w-full bg-base-200 text-center"
+              value="{{ object.pk|default:'' }}" readonly />
+          </div>
+          <!-- CPF -->
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">CPF</span></label>
+            {{ form.cpf }}
+          </div>
+          <!-- Nome -->
+          <div class="col-span-12 md:col-span-5">
+            <label class="label"><span class="label-text">Nome</span></label>
+            {{ form.nome }}
+          </div>
+          <!-- Celular -->
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">Celular</span></label>
+            <div class="join w-full">
+              {{ form.celular }}
+              <button class="btn btn-sm join-item btn-square" type="button" title="WhatsApp">
+                <i class="fab fa-whatsapp text-success cursor-pointer"></i>
+              </button>
+            </div>
+          </div>
+          <!-- Telefone -->
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">Outro Telefone</span></label>
+            {{ form.telefone }}
+          </div>
+        </div>
+
+        <!-- Linha 2 -->
+        <div class="grid grid-cols-12 gap-4 mb-2">
+          <div class="col-span-12 md:col-span-3">
+            <label class="label"><span class="label-text">Email</span></label>
+            {{ form.email }}
+          </div>
+          <div class="col-span-6 md:col-span-2">
+            <label class="label"><span class="label-text">Doc. Identidade</span></label>
+            {{ form.documento }}
+          </div>
+          <div class="col-span-6 md:col-span-2">
+            <label class="label"><span class="label-text">Nascimento</span></label>
+            {{ form.nascimento }}
+          </div>
+          <div class="col-span-6 md:col-span-1">
+            <label class="label"><span class="label-text">Peso</span></label>
+            {{ form.peso }}
+          </div>
+          <div class="col-span-6 md:col-span-1">
+            <label class="label"><span class="label-text">Altura</span></label>
+            {{ form.altura }}
+          </div>
+          <div class="col-span-6 md:col-span-1">
+            <label class="label"><span class="label-text">Sexo</span></label>
+            {{ form.sexo }}
+          </div>
+          <div class="col-span-6 md:col-span-2">
+            <label class="label"><span class="label-text">Profissão</span></label>
+            {{ form.profissao }}
+          </div>
+        </div>
+
+        <!-- Linha 3 (Endereço) -->
+        <div class="grid grid-cols-12 gap-4 mb-2">
+          <div class="col-span-12 md:col-span-1">
+            <label class="label flex items-center justify-between gap-2">
+              <span class="label-text">CEP</span>
+              <span x-show="consultandoCep" class="loading loading-spinner loading-xs"></span>
+            </label>
+            {{ form.cep }}
+          </div>
+          <div class="col-span-12 md:col-span-3">
+            <label class="label"><span class="label-text">Logradouro</span></label>
+            {{ form.logradouro }}
+          </div>
+          <div class="col-span-4 md:col-span-1">
+            <label class="label"><span class="label-text">Número</span></label>
+            {{ form.numero }}
+          </div>
+          <div class="col-span-8 md:col-span-2">
+            <label class="label"><span class="label-text">Complemento</span></label>
+            {{ form.complemento }}
+          </div>
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">Bairro</span></label>
+            {{ form.bairro }}
+          </div>
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">Cidade</span></label>
+            {{ form.cidade }}
+          </div>
+          <div class="col-span-12 md:col-span-1">
+            <label class="label"><span class="label-text">Estado</span></label>
+            {{ form.estado }}
+          </div>
+        </div>
+        <!-- Cidade field missing in row 3 logic above, adding properly -->
+        <div class="grid grid-cols-12 gap-4 mb-2">
+          <!-- Linha 4 (Pais) moved up to flow -->
+          <div class="col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Nome da Mãe</span></label>
+            {{ form.mae }}
+          </div>
+          <div class="col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Nome do Pai</span></label>
+            {{ form.pai }}
+          </div>
+        </div>
+
+        <!-- Linha 5 (Convênio, Carteiras, Obs e Status) -->
+        <div class="grid grid-cols-12 gap-4 mb-4">
+          
+          <!-- Coluna 1: Convênio e Carteiras -->
+          <div class="col-span-12 md:col-span-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12">
+                <label class="label"><span class="label-text">Convênio</span></label>
+                {{ form.convenio }}
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label class="label"><span class="label-text">Carteira Convênio</span></label>
+                {{ form.carteira_conv }}
+              </div>
+              <div class="col-span-12 md:col-span-6">
+                <label class="label"><span class="label-text">Carteira SUS</span></label>
+                {{ form.carteira_sus }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna 2: Observações -->
+          <div class="col-span-12 md:col-span-7">
+            <label class="label"><span class="label-text">Observações</span></label>
+            {{ form.obs }}
+          </div>
+
+          <!-- Coluna 3: Status -->
+          <div class="col-span-12 md:col-span-1 flex items-center justify-center">
+            <label class="label cursor-pointer gap-2 mt-8">
+              <span class="label-text font-semibold">Ativo</span>
+              {{ form.status }}
+            </label>
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Botões de Ação -->
+        <div class="flex justify-between items-center">
+          <div class="flex gap-2">
+            <!-- Botão Novo Procedimento (Apenas visual por enquanto) -->
+            <button
+              type="button"
+              class="btn btn-warning btn-sm"
+              onclick="window.dispatchEvent(new CustomEvent('show-toast', { detail: { type: 'info', message: 'Funcionalidade em desenvolvimento.' } }))"
+            >
+              <i class="fas fa-folder-plus"></i> Novo Procedimento
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="fas fa-save"></i> Salvar Informações
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% if object %}
+    <!-- Tab: Vacinas -->
+    <div x-show="activeTab === 'vacinas'" style="display: none;">
+      <div class="flex justify-center mb-4">
+        <button class="btn btn-primary btn-sm" onclick="abrirNovaVacinaModal()">
+          <i class="fas fa-syringe"></i> Nova Vacina
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full text-center">
+          <thead>
+            <tr>
+              <th>Cód.</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Aplicador</th>
+              <th>Forma Pag.</th>
+              <th>Valor</th>
+              <th>Obs</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for vacina in vacinas %}
+            <tr>
+              <td>{{ vacina.pk }}</td>
+              <td>{{ vacina.data_aplicacao|date:'d/m/Y'|default:'-' }}</td>
+              <td>{{ vacina.descricao_vacina|default:'-' }}</td>
+              <td>{{ vacina.aplicador|default:'-' }}</td>
+              <td>{{ vacina.forma_pagamento|default:'-' }}</td>
+              <td>{% if vacina.valor %}R$ {{ vacina.valor|floatformat:2 }}{% else %}-{% endif %}</td>
+              <td>{{ vacina.obs|default:'-' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm btn-square"
+                  title="Editar"
+                  onclick="abrirEditarVacinaModal(this)"
+                  data-vacina-id="{{ vacina.pk }}"
+                  data-data-aplicacao="{{ vacina.data_aplicacao|date:'Y-m-d'|default:'' }}"
+                  data-descricao-vacina="{{ vacina.descricao_vacina|default:''|escape }}"
+                  data-aplicador-id="{{ vacina.aplicador_id|default:'' }}"
+                  data-forma-pagamento-id="{{ vacina.forma_pagamento_id|default:'' }}"
+                  data-valor="{{ vacina.valor|unlocalize|default_if_none:'' }}"
+                  data-obs="{{ vacina.obs|default:''|escape }}"
+                >
+                  <i class="fas fa-pen"></i>
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-base-content/50 py-8">
+                <i class="fas fa-info-circle mr-2"></i> Nenhuma vacina registrada para este paciente.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Medicação -->
+    <div x-show="activeTab === 'medicacao'" style="display: none;">
+      <!-- Placeholder for Medicação -->
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <span>Módulo de Medicação em desenvolvimento. As prescrições aparecerão aqui.</span>
+      </div>
+
+      <!-- Exemplo Visual de Card conforme PHP -->
+      <div class="card bg-base-200 shadow-sm border border-primary/20 mt-4 opacity-70">
+        <div class="card-body p-4">
+          <div class="flex justify-between items-start">
+            <div class="badge badge-primary gap-2">Example Date</div>
+            <div class="badge badge-outline">Status</div>
+          </div>
+          <h3 class="font-bold text-lg mt-2">Descrição do Medicamento</h3>
+          <p class="text-sm">Realizado em: Unidade Exemplo</p>
+          <div class="text-sm mt-2 space-y-1">
+            <p><strong>Médico:</strong> Dr. Exemplo</p>
+            <p><strong>Indicação:</strong> Tratamento XYZ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Exames -->
+    <div x-show="activeTab === 'exames'" style="display: none;">
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <span>Módulo de Exames em desenvolvimento.</span>
+      </div>
+    </div>
+
+    <!-- Tab: Histórico -->
+    <div x-show="activeTab === 'consultas'" style="display: none;">
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <span>Histórico de consultas será exibido aqui.</span>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Modal Vacina -->
+<dialog id="my_modal_vacina" class="modal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-lg"><i class="fas fa-syringe mr-2"></i>Registro da Vacina</h3>
+      <form method="dialog">
+        <button type="submit" class="btn btn-ghost btn-sm btn-circle" aria-label="Fechar">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </form>
+    </div>
+
+    {% if vacina_form.errors %}
+    <div class="alert alert-error alert-soft mb-4">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span>Verifique os campos do registro de vacina.</span>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="salvar_vacina" value="1">
+      <input type="hidden" name="vacina_id" id="vacina_id" value="{{ vacina_id_edicao|default:'' }}">
+
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 md:col-span-4">
+          <label class="label"><span class="label-text">Data Aplicação</span></label>
+          {{ vacina_form.data_aplicacao }}
+        </div>
+
+        <div class="col-span-12 md:col-span-8">
+          <label class="label"><span class="label-text">Descrição</span></label>
+          {{ vacina_form.descricao_vacina }}
+        </div>
+
+        <div class="col-span-12">
+          <label class="label"><span class="label-text">Aplicado por</span></label>
+          {{ vacina_form.aplicador }}
+        </div>
+
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Forma de Pagamento</span></label>
+          {{ vacina_form.forma_pagamento }}
+        </div>
+
+        <div class="col-span-12 md:col-span-6">
+          <label class="label"><span class="label-text">Valor</span></label>
+          {{ vacina_form.valor }}
+        </div>
+
+        <div class="col-span-12">
+          <label class="label"><span class="label-text">Observações</span></label>
+          {{ vacina_form.obs }}
+        </div>
+      </div>
+
+      <div class="modal-action mt-4">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="my_modal_vacina.close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-salvar-vacina">
+          <i class="fas fa-save"></i> Registrar
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/paciente.js' %}"></script>
+<script>
+  function limparFormularioVacina() {
+    const vacinaIdInput = document.getElementById('vacina_id');
+    const dataAplicacaoInput = document.getElementById('id_data_aplicacao');
+    const descricaoVacinaInput = document.getElementById('id_descricao_vacina');
+    const aplicadorInput = document.getElementById('id_aplicador');
+    const formaPagamentoInput = document.getElementById('id_forma_pagamento');
+    const valorInput = document.getElementById('id_valor');
+    const obsInput = document.getElementById('id_obs');
+    const btnSalvar = document.getElementById('btn-salvar-vacina');
+
+    if (vacinaIdInput) vacinaIdInput.value = '';
+    if (dataAplicacaoInput) dataAplicacaoInput.value = '';
+    if (descricaoVacinaInput) descricaoVacinaInput.value = '';
+    if (aplicadorInput) aplicadorInput.value = '';
+    if (formaPagamentoInput) formaPagamentoInput.value = '';
+    if (valorInput) valorInput.value = '';
+    if (obsInput) obsInput.value = '';
+    if (btnSalvar) btnSalvar.innerHTML = '<i class="fas fa-save"></i> Registrar';
+
+    const titulo = document.querySelector('#my_modal_vacina h3');
+    if (titulo) {
+      titulo.innerHTML = '<i class="fas fa-syringe mr-2"></i>Registro da Vacina';
+    }
+  }
+
+  function abrirNovaVacinaModal() {
+    limparFormularioVacina();
+    const modal = document.getElementById('my_modal_vacina');
+    if (modal) {
+      modal.showModal();
+    }
+  }
+
+  function abrirEditarVacinaModal(button) {
+    limparFormularioVacina();
+
+    const vacinaIdInput = document.getElementById('vacina_id');
+    const dataAplicacaoInput = document.getElementById('id_data_aplicacao');
+    const descricaoVacinaInput = document.getElementById('id_descricao_vacina');
+    const aplicadorInput = document.getElementById('id_aplicador');
+    const formaPagamentoInput = document.getElementById('id_forma_pagamento');
+    const valorInput = document.getElementById('id_valor');
+    const obsInput = document.getElementById('id_obs');
+    const btnSalvar = document.getElementById('btn-salvar-vacina');
+
+    if (vacinaIdInput) vacinaIdInput.value = button.dataset.vacinaId || '';
+    if (dataAplicacaoInput) dataAplicacaoInput.value = button.dataset.dataAplicacao || '';
+    if (descricaoVacinaInput) descricaoVacinaInput.value = button.dataset.descricaoVacina || '';
+    if (aplicadorInput) aplicadorInput.value = button.dataset.aplicadorId || '';
+    if (formaPagamentoInput) formaPagamentoInput.value = button.dataset.formaPagamentoId || '';
+    if (valorInput) {
+      const valorBruto = button.dataset.valor || '';
+      let valorNormalizado = valorBruto.replace(/\s/g, '');
+      if (valorNormalizado.includes(',')) {
+        valorNormalizado = valorNormalizado.replace(/\./g, '').replace(',', '.');
+      }
+      valorInput.value = valorNormalizado;
+    }
+    if (obsInput) obsInput.value = button.dataset.obs || '';
+    if (btnSalvar) btnSalvar.innerHTML = '<i class="fas fa-save"></i> Atualizar';
+
+    const titulo = document.querySelector('#my_modal_vacina h3');
+    if (titulo) {
+      titulo.innerHTML = '<i class="fas fa-pen mr-2"></i>Editar Registro da Vacina';
+    }
+
+    const modal = document.getElementById('my_modal_vacina');
+    if (modal) {
+      modal.showModal();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('my_modal_vacina');
+    if (!modal) {
+      return;
+    }
+
+    modal.addEventListener('close', function () {
+      limparFormularioVacina();
+    });
+
+    const vacinaIdInput = document.getElementById('vacina_id');
+    if (vacinaIdInput && vacinaIdInput.value) {
+    const btnSalvar = document.getElementById('btn-salvar-vacina');
+    if (btnSalvar) btnSalvar.innerHTML = '<i class="fas fa-save"></i> Atualizar';
+    const titulo = document.querySelector('#my_modal_vacina h3');
+    if (titulo) {
+      titulo.innerHTML = '<i class="fas fa-pen mr-2"></i>Editar Registro da Vacina';
+    }
+    }
+  });
+</script>
+{% if vacina_form.errors %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const root = document.querySelector('[x-data]');
+    if (root && root.__x && root.__x.$data) {
+      root.__x.$data.activeTab = 'vacinas';
+    }
+
+    const modal = document.getElementById('my_modal_vacina');
+    if (modal) {
+      modal.showModal();
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

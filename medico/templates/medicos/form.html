@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if object %}Médico: {{ object.nome }}{% else %}Novo Médico{% endif %} | Vittas
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-2">
+      <a href="{% url 'medico:medico_list' %}" class="btn btn-ghost btn-circle btn-sm" title="Voltar">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <h1 class="text-2xl font-bold">
+        <i class="fa-solid fa-user-doctor"></i>
+        {% if object %}Editar Médico{% else %}Cadastro de Médico{% endif %}
+        {% if object %}<small class="text-sm text-base-content/70">({{ object.nome }})</small>{% endif %}
+      </h1>
+    </div>
+    <div class="text-sm breadcrumbs hidden md:block">
+      <ul>
+        <li><a href="/home/">Home</a></li>
+        <li>Configurações</li>
+        <li><a href="{% url 'medico:medico_list' %}">Médicos</a></li>
+        <li>{% if object %}Edição{% else %}Novo{% endif %}</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bg-base-100 rounded-lg shadow p-4 md:p-6">
+    <div role="tablist" class="tabs tabs-lifted">
+      <!-- Tab Cadastro -->
+      <input type="radio" name="medico_tabs" role="tab" class="tab" aria-label="Cadastro" {% if request.GET.tab != 'especialidades' and request.GET.tab != 'horarios' %}checked{% endif %} />
+      <div role="tabpanel" class="tab-content pt-6">
+        <form method="post" class="grid grid-cols-12 gap-4">
+          {% csrf_token %}
+          
+          {% if form.errors %}
+          <div class="col-span-12 alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>Verifique os erros no formulário.</span>
+          </div>
+          {% endif %}
+          
+          <!-- <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">CPF</span></label>
+            {{ form.cpf }}
+            {% if form.cpf.errors %}<span class="text-error text-xs">{{ form.cpf.errors.0 }}</span>{% endif %}
+          </div> -->
+          
+          <div class="col-span-12 md:col-span-2">
+            <label class="label"><span class="label-text">CRM</span></label>
+            {{ form.crm }}
+            {% if form.crm.errors %}<span class="text-error text-xs">{{ form.crm.errors.0 }}</span>{% endif %}
+          </div>
+          
+          <div class="col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">Nome</span></label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<span class="text-error text-xs">{{ form.nome.errors.0 }}</span>{% endif %}
+          </div>
+          
+          <div class="col-span-12 md:col-span-3">
+            <label class="label"><span class="label-text">Celular</span></label>
+            {{ form.celular }}
+            {% if form.celular.errors %}<span class="text-error text-xs">{{ form.celular.errors.0 }}</span>{% endif %}
+          </div>
+          
+          <div class="col-span-12 md:col-span-3">
+            <label class="label"><span class="label-text">Telefone</span></label>
+            {{ form.telefone }}
+            {% if form.telefone.errors %}<span class="text-error text-xs">{{ form.telefone.errors.0 }}</span>{% endif %}
+          </div>
+          
+          <div class="col-span-12 md:col-span-5">
+            <label class="label"><span class="label-text">E-mail</span></label>
+            {{ form.email }}
+            {% if form.email.errors %}<span class="text-error text-xs">{{ form.email.errors.0 }}</span>{% endif %}
+          </div>
+
+          <div class="col-span-12 md:col-span-1 flex items-end">
+            <label class="label cursor-pointer gap-2 pb-2">
+              <span class="label-text">Ativo</span>
+              {{ form.status }}
+            </label>
+          </div>
+
+          <div class="col-span-12">
+            <label class="label"><span class="label-text">Observações</span></label>
+            {{ form.obs }}
+            {% if form.obs.errors %}<span class="text-error text-xs">{{ form.obs.errors.0 }}</span>{% endif %}
+          </div>
+
+          <div class="col-span-12">
+            <div class="divider my-0"></div>
+          </div>
+
+          <div class="col-span-12 flex justify-end gap-2">
+            <a href="{% url 'medico:medico_list' %}" class="btn btn-ghost btn-sm">Cancelar</a>
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="fas fa-save"></i> Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tab Especialidades -->
+      <input type="radio" name="medico_tabs" role="tab" class="tab" aria-label="Especialidades" {% if request.GET.tab == 'especialidades' %}checked{% endif %} />
+      <div role="tabpanel" class="tab-content pt-6">
+        {% if object %}
+        <div class="grid grid-cols-12 gap-4">
+          <div class="col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Especialidade</span></label>
+            <form method="post" class="flex items-end gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_especialidade">
+              <div class="w-full">
+                <select name="especialidade_id" class="select select-bordered select-sm w-full" required>
+                  <option value="">Selecione...</option>
+                  {% for especialidade in especialidades_disponiveis %}
+                    <option value="{{ especialidade.id }}">{{ especialidade.descricao }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Adicionar
+              </button>
+            </form>
+          </div>
+
+          <div class="col-span-12">
+            <div class="divider my-0"></div>
+          </div>
+
+          <div class="col-span-12">
+            <label class="label"><span class="label-text">Especialidades vinculadas</span></label>
+            {% if especialidades_vinculadas %}
+            <div class="overflow-x-auto">
+              <table class="table table-zebra table-sm">
+                <thead>
+                  <tr>
+                    <th>Especialidade</th>
+                    <th class="w-24 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in especialidades_vinculadas %}
+                  <tr>
+                    <td>{{ item.especialidade.descricao }}</td>
+                    <td class="text-right">
+                      <button
+                        type="button"
+                        class="btn btn-error btn-outline btn-xs"
+                        data-delete-url="{% url 'medico:medico_especialidade_delete' object.pk item.pk %}"
+                        onclick="confirmarExclusaoEspecialidade(this.dataset.deleteUrl)"
+                        title="Excluir"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-sm text-base-content/70">Nenhuma especialidade vinculada para este médico.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <p class="text-sm text-base-content/70">Salve o cadastro do médico para vincular especialidades.</p>
+        {% endif %}
+      </div>
+
+      <!-- Tab Horários -->
+      <input type="radio" name="medico_tabs" role="tab" class="tab" aria-label="Horários" {% if request.GET.tab == 'horarios' %}checked{% endif %} />
+      <div role="tabpanel" class="tab-content pt-6">
+        {% if object %}
+        <div class="grid grid-cols-12 gap-4" x-data="{ 
+          inicioAtendimento: '08:00',
+          fimAtendimento: '17:00',
+          tempoConsulta: 30,
+          horarios: [],
+          horariosExistentes: JSON.parse('{{ horarios_medico_json|escapejs }}'),
+          isSavingHorarios: false,
+
+          carregarHorariosExistentes() {
+            this.horarios = JSON.parse(JSON.stringify(this.horariosExistentes || []));
+          },
+          
+          gerarHorarios() {
+            // Validações
+            if (!this.inicioAtendimento || !this.fimAtendimento || !this.tempoConsulta) {
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { type: 'warning', message: 'Preencha todos os campos!' }
+              }));
+              return;
+            }
+            
+            // Converter hora para minutos
+            const horaParaMinutos = (hora) => {
+              const [h, m] = hora.split(':').map(Number);
+              return h * 60 + m;
+            };
+            
+            // Converter minutos para hora
+            const minutosParaHora = (minutos) => {
+              const h = Math.floor(minutos / 60).toString().padStart(2, '0');
+              const m = (minutos % 60).toString().padStart(2, '0');
+              return `${h}:${m}`;
+            };
+            
+            const inicioMin = horaParaMinutos(this.inicioAtendimento);
+            const fimMin = horaParaMinutos(this.fimAtendimento);
+            const intervalo = parseInt(this.tempoConsulta);
+            
+            if (inicioMin >= fimMin) {
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { type: 'error', message: 'Hora de início deve ser menor que hora de fim!' }
+              }));
+              return;
+            }
+            
+            // Gerar horários
+            this.horarios = [];
+            let minutoAtual = inicioMin;
+            
+            while (minutoAtual < fimMin) {
+              this.horarios.push({
+                horario: minutosParaHora(minutoAtual),
+                liberado: true
+              });
+              minutoAtual += intervalo;
+            }
+            
+            window.dispatchEvent(new CustomEvent('show-toast', {
+              detail: { type: 'success', message: `${this.horarios.length} horários gerados com sucesso!` }
+            }));
+          },
+
+          abrirConfirmacaoGravar() {
+            if (!this.horarios.length) {
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { type: 'warning', message: 'Gere os horários antes de gravar.' }
+              }));
+              return;
+            }
+            const modal = this.$refs.confirmSubstituirHorariosModal;
+            if (modal && !modal.open) {
+              modal.showModal();
+            }
+          },
+
+          fecharConfirmacaoGravar() {
+            const modal = this.$refs.confirmSubstituirHorariosModal;
+            if (modal && modal.open) {
+              modal.close();
+            }
+          },
+
+          async confirmarGravarHorarios() {
+            if (this.isSavingHorarios) return;
+
+            this.isSavingHorarios = true;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+            const formData = new FormData();
+            formData.append('action', 'save_horarios');
+            formData.append('horarios_json', JSON.stringify(this.horarios));
+
+            try {
+              const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                  'X-CSRFToken': csrfToken,
+                  'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+              });
+
+              const contentType = response.headers.get('content-type') || '';
+              const rawBody = await response.text();
+              let data = null;
+
+              if (contentType.includes('application/json')) {
+                data = JSON.parse(rawBody);
+              } else {
+                throw new Error(rawBody || 'Resposta inválida do servidor.');
+              }
+
+              if (!response.ok || !data.success) {
+                throw new Error(data?.message || 'Erro ao gravar horários.');
+              }
+
+              if (Array.isArray(data.horarios)) {
+                this.horarios = JSON.parse(JSON.stringify(data.horarios));
+                this.horariosExistentes = JSON.parse(JSON.stringify(data.horarios));
+              }
+              this.fecharConfirmacaoGravar();
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { type: 'success', message: data.message || 'Horários gravados com sucesso!' }
+              }));
+            } catch (error) {
+              window.dispatchEvent(new CustomEvent('show-toast', {
+                detail: { type: 'error', message: error.message || 'Erro ao processar a gravação dos horários.' }
+              }));
+            } finally {
+              this.isSavingHorarios = false;
+            }
+          }
+        }" x-init="carregarHorariosExistentes()">
+          <!-- Primeira Coluna: Controles -->
+          <div class="col-span-12 lg:col-span-5">
+            <div class="card bg-base-200">
+              <div class="card-body">
+                <h3 class="card-title text-base">Configuração de Horários</h3>
+
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text">Início do Atendimento</span>
+                  </label>
+                  <input 
+                    type="time" 
+                    class="input input-bordered input-sm w-full" 
+                    x-model="inicioAtendimento"
+                  />
+                </div>
+
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text">Fim do Atendimento</span>
+                  </label>
+                  <input 
+                    type="time" 
+                    class="input input-bordered input-sm w-full" 
+                    x-model="fimAtendimento"
+                  />
+                </div>
+
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text">Tempo de Consulta (Min)</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    class="input input-bordered input-sm w-full" 
+                    x-model="tempoConsulta"
+                    min="5"
+                    step="5"
+                  />
+                </div>
+
+                <div class="card-actions justify-end mt-4">
+                  <button 
+                    type="button" 
+                    class="btn btn-primary btn-sm w-full"
+                    @click="gerarHorarios()"
+                  >
+                    <i class="fas fa-clock"></i> Gerar Horários das Consultas
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Segunda Coluna: Tabela de Horários -->
+          <div class="col-span-12 lg:col-span-7">
+            <div class="card bg-base-200">
+              <div class="card-body">
+                <h3 class="card-title text-base">Grade de Horários</h3>
+                
+                <!-- Tabela com overflow -->
+                <div class="overflow-y-auto" style="max-height: 400px;">
+                  <table class="table table-zebra table-sm table-pin-rows">
+                    <thead>
+                      <tr>
+                        <th class="w-24">Horário</th>
+                        <th class="w-24 text-center">Liberado</th>
+                        <th>Escopo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-if="horarios.length === 0">
+                        <tr>
+                          <td colspan="3" class="text-center text-base-content/70 py-8">
+                            Clique em "Gerar Horários das Consultas" para criar a grade
+                          </td>
+                        </tr>
+                      </template>
+                      
+                      <template x-for="(item, index) in horarios" :key="index">
+                        <tr>
+                          <td x-text="item.horario"></td>
+                          <td class="text-center">
+                            <input 
+                              type="checkbox" 
+                              class="toggle toggle-success toggle-sm" 
+                              x-model="item.liberado"
+                            />
+                          </td>
+                          <td>Clínica</td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Botão Gravar (fora do overflow) -->
+                <div class="card-actions justify-center mt-4">
+                  <button type="button" class="btn btn-success btn-sm" @click="abrirConfirmacaoGravar()">
+                    <i class="fas fa-save"></i> Gravar Horários
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <dialog class="modal" x-ref="confirmSubstituirHorariosModal">
+            <div class="modal-box">
+              <h3 class="font-bold text-lg mb-2 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-warning"></i>
+                <span>Confirmar substituição de horários</span>
+              </h3>
+              <p class="py-2">Ao confirmar, os horários atuais deste médico serão substituídos pelos horários gerados na tela.</p>
+              <p class="text-sm text-info font-semibold">Obs: as agendas já criadas não sofrerão alteração.</p>
+              <div class="modal-action">
+                <button type="button" class="btn btn-ghost btn-sm" @click="fecharConfirmacaoGravar()">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" @click="confirmarGravarHorarios()" :disabled="isSavingHorarios">
+                  <span x-show="isSavingHorarios" class="loading loading-spinner loading-xs"></span>
+                  <span x-text="isSavingHorarios ? 'Gravando...' : 'Confirmar Gravação'"></span>
+                </button>
+              </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+              <button @click="fecharConfirmacaoGravar()">close</button>
+            </form>
+          </dialog>
+        </div>
+        {% else %}
+        <p class="text-sm text-base-content/70">Salve o cadastro do médico para configurar horários.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop().split(';').shift();
+    }
+    return '';
+  }
+
+  function confirmarExclusaoEspecialidade(url) {
+    window.openConfirmDialog(url, () => {
+      window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          type: 'success',
+          message: 'Especialidade desvinculada com sucesso!'
+        }
+      }));
+
+      setTimeout(() => {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('tab', 'especialidades');
+        window.location.href = currentUrl.toString();
+      }, 300);
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Cabeçalho e Ações -->
+<div class="flex flex-col gap-4">
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold">
+      <i class="fa-solid fa-id-card-clip"></i> Autorizações
+    </h1>
+    <button class="btn btn-primary btn-sm" onclick="openNovaAutorizacaoModal()">
+      <i class="fa-solid fa-user-plus"></i> Nova Autorização
+    </button>
+  </div>
+
+  <!-- Filtro -->
+  <div class="bg-base-100 p-4 rounded-lg shadow">
+    <form method="get" class="flex gap-2">
+      <input type="text" name="busca" value="{{ request.GET.busca }}" placeholder="Buscar por nome, procedimento..."
+        class="input input-bordered input-sm w-full max-w-xs" />
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+      {% if request.GET.busca %}
+      <a href="{% url 'enfermagem:autorizacao_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Tabela -->
+  <div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+    <table class="table table-zebra table-sm w-full">
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Procedimento</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for autorizacao in autorizacoes %}
+        <tr>
+          <td>
+            <div class="font-bold">{{ autorizacao.paciente }}</div>
+            <div class="text-sm opacity-50">{{ autorizacao.paciente.email|default:"-" }}</div>
+          </td>
+          <td>{{ autorizacao.procedimento.nome }}</td>
+          <td> <span class="{{ autorizacao.status_exibicao_class }}">
+              {{ autorizacao.status_exibicao }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm" data-id="{{ autorizacao.id }}"
+              data-paciente="{{ autorizacao.paciente|escapejs }}"
+              data-procedimento="{{ autorizacao.procedimento.nome|escapejs }}" 
+              data-status="{{ autorizacao.status }}"
+              data-observacoes="{{ autorizacao.observacoes|escapejs }}"
+              onclick="openModal(this)">
+              <i class="fa-solid fa-eye"></i> Ver
+            </button>
+            <button>
+              <a
+                class="btn btn-ghost btn-sm text-error"
+                onclick="deleteAutorizacao('{{ autorizacao.id }}', {{ autorizacao.agendamento_ativo|yesno:'true,false' }}, '{{ autorizacao.agendamento_ativo.data_agendada|date:'d/m/Y' }}', '{{ autorizacao.agendamento_ativo.hora_agendamento|time:'H:i' }}')"
+              >
+                <i class="fa-solid fa-trash"></i> Excluir
+              </a>
+            </button>
+          </td>
+
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-4 text-base-content/70">
+            Nenhum procedimento encontrado.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<!-- Fim do Cabeçalho e Ações -->
+
+
+<!-- Modal Nova Autorização -->
+<div class="modal" id="modal-nova-autorizacao">
+  <div class="modal-box">
+    <h1 class="text-2xl font-bold">Nova Autorização</h1>
+    <form method="post" id="form-nova-autorizacao">
+      {% csrf_token %}
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Paciente</span>
+        </label>
+        <select name="paciente" class="tomselect select select-bordered w-full px-0 py-0" id="select-busca">
+          <option value="">Selecione...</option>
+          {% for paciente in pacientes %}
+            <option value="{{ paciente.id }}">{{ paciente }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Procedimento</span>
+        </label>
+        <select name="procedimento" class="tomselect select select-bordered w-full px-0 py-0" id="select-busca-procedimento">
+          <option value="">Selecione...</option>
+          {% for procedimento in procedimentos %}
+            <option value="{{ procedimento.id }}">{{ procedimento.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Observações</span>
+        </label>
+        <textarea class="textarea textarea-bordered w-full" name="observacoes" id="observacoes"
+          placeholder="Adicione observações..."></textarea>
+      </div>
+
+      <input type="hidden" name="status" id="status" value="PENDENTE">
+
+      <div class="modal-action">
+        <button type="submit" class="btn btn-primary">
+          Salvar
+        </button>
+
+        <button type="button" class="btn" onclick="closeNovaAutorizacaoModal()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Fim do Modal Nova Autorização -->
+
+<!-- Modal deletar Autorização -->
+<div class="modal" id="modal-confirm-delete">
+  <div class="modal-box">
+    <h2 class="text-lg font-semibold mb-4">
+      Confirmar exclusão
+    </h2>
+    <p class="mb-6">
+      Tem certeza que deseja excluir esta autorização? Essa ação não pode ser desfeita.
+    </p>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 rounded">
+        Cancelar
+      </button>
+      <a id="confirmDeleteLink" class="px-4 py-2 bg-red-600 text-white rounded">
+        Excluir
+      </a>
+    </div>
+  </div>
+</div>
+<!-- Fim do Modal deletar Autorização -->
+
+<!-- Modal exclusão bloqueada -->
+<div class="modal" id="modal-delete-blocked">
+  <div class="modal-box max-w-md">
+    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+      <i class="fa-solid fa-calendar-xmark text-warning"></i>
+      Exclusão não permitida
+    </h2>
+    <p class="mb-3 text-sm leading-6">
+      Esta autorização não pode ser excluída porque possui um agendamento ativo.
+    </p>
+    <p class="mb-6 text-sm leading-6">
+      <span id="blocked-delete-schedule-info"></span>
+      Só é possível excluir após cancelar o agendamento.
+    </p>
+    <div class="flex justify-end">
+      <button onclick="closeBlockedDeleteModal()" class="btn btn-primary btn-sm">
+        Entendi
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Fim do Modal exclusão bloqueada -->
+
+<!-- Modal de Detalhes -->
+<div class="modal" id="modal-detalhes">
+  <div class="modal-box">
+    <form method="post" id="form-autorizacao">
+      {% csrf_token %}
+
+      <input type="hidden" name="autorizacao_id" id="autorizacao-id">
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Paciente</span>
+        </label>
+        <input type="text" name="paciente" id="paciente" class="input input-bordered w-full" readonly>
+      </div>
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Procedimento</span>
+        </label>
+        <input type="text" name="procedimento" id="procedimento" class="input input-bordered w-full" readonly>
+      </div>
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Observações</span>
+        </label>
+        <textarea class="textarea textarea-bordered w-full" name="observacoesEdit" id="observacoesEdit"></textarea>
+      </div>
+
+      <div class="mt-4">
+        <label class="label">
+          <span class="label-text">Status</span>
+        </label>
+        <select name="statusAtual" id="statusAtual" class="select select-bordered w-full">
+          <option value="PENDENTE">Pendente</option>
+          <option value="APROVADA">Aprovada</option>
+          <option value="NEGADA">Negada</option>
+        </select>
+      </div>
+
+      <div class="modal-action">
+        <button type="submit" class="btn btn-primary">
+          Salvar Alterações
+        </button>
+
+        <button type="button" class="btn" onclick="closeModal()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Fim do Modal de Detalhes -->
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+
+  function openModal(button) {
+    const modal = document.getElementById('modal-detalhes');
+    modal.classList.add('modal-open');
+
+    const form = document.getElementById('form-autorizacao');
+    form.action = `/enfermagem/${button.dataset.id}/editar/`;
+
+    document.getElementById('autorizacao-id').value = button.dataset.id;
+    document.getElementById('paciente').value = button.dataset.paciente;
+    document.getElementById('procedimento').value = button.dataset.procedimento;
+    document.getElementById('statusAtual').value = button.dataset.status;
+    document.getElementById('observacoesEdit').value = button.dataset.observacoes;
+    
+  }
+  function closeModal() {
+    const modal = document.getElementById('modal-detalhes');
+    modal.classList.remove('modal-open');
+  }
+
+
+  function openNovaAutorizacaoModal() {
+    const modal = document.getElementById('modal-nova-autorizacao');
+    modal.classList.add('modal-open');
+    form = document.getElementById('form-nova-autorizacao');
+    form.action = `/enfermagem/nova-autorizacao/`;
+  }
+  function closeNovaAutorizacaoModal() {
+    const modal = document.getElementById('modal-nova-autorizacao');
+    modal.classList.remove('modal-open');
+  }
+
+  function deleteAutorizacao(id, possuiAgendamentoAtivo, dataAgendamento, horaAgendamento) {
+    if (possuiAgendamentoAtivo) {
+      const modal = document.getElementById('modal-delete-blocked');
+      const info = document.getElementById('blocked-delete-schedule-info');
+
+      if (dataAgendamento && horaAgendamento) {
+        info.textContent = `Agendamento atual: ${dataAgendamento} às ${horaAgendamento}. `;
+      } else {
+        info.textContent = '';
+      }
+
+      modal.classList.add('modal-open');
+      return;
+    }
+
+    const modal = document.getElementById('modal-confirm-delete');
+    modal.classList.add('modal-open');
+    document.getElementById('confirmDeleteLink').href = `/enfermagem/${id}/autorizacao-delete/`;
+  } 
+  function closeDeleteModal() {
+    const modal = document.getElementById('modal-confirm-delete');
+    modal.classList.remove('modal-open');
+  }
+
+  function closeBlockedDeleteModal() {
+    const modal = document.getElementById('modal-delete-blocked');
+    modal.classList.remove('modal-open');
+  }
+
+document.querySelectorAll(".tomselect").forEach(el => {
+  new TomSelect(el, {
+    create: false,
+    sortField: {
+      field: "text",
+      direction: "asc"
+    }
+  });
+});
+
+{% if exclusao_bloqueada %}
+window.addEventListener('load', function () {
+  document.getElementById('blocked-delete-schedule-info').textContent = '';
+  document.getElementById('modal-delete-blocked').classList.add('modal-open');
+});
+{% endif %}
+
+
+
+
+
+
+</script>
+{% endblock %}

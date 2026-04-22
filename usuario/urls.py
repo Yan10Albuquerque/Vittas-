@@ -1,0 +1,22 @@
+from django.urls import path
+
+from .views import (
+    ClinicaPerfilView,
+    HomeView,
+    LoginView,
+    alterar_senha_api,
+    login_api,
+    logout_view,
+)
+
+app_name = "usuario"
+
+urlpatterns = [
+    path("login/", LoginView.as_view(), name="login"),
+    path("home/", HomeView.as_view(), name="home"),
+    path("clinica/", ClinicaPerfilView.as_view(), name="clinica_perfil"),
+    path("clinicas/", ClinicaPerfilView.as_view(), name="clinicas_list"),
+    path("api/login/", login_api, name="login_api"),
+    path("api/alterar-senha/", alterar_senha_api, name="alterar_senha_api"),
+    path("api/logout/", logout_view, name="logout_api"),
+]

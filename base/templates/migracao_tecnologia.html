@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano de Migração: PHP → Django + Tailwind + Alpine.js</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --bg: #ffffff;
+            --text: #2c3e50;
+            --border: #ddd;
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text);
+            background: var(--bg);
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: var(--primary);
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 12px;
+            margin: 30px 0 15px 0;
+        }
+
+        h2 {
+            font-size: 22px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 8px;
+            margin: 35px 0 15px 0;
+        }
+
+        h3 {
+            font-size: 17px;
+            color: var(--secondary);
+            margin: 25px 0 10px 0;
+        }
+
+        h4 {
+            font-size: 15px;
+            color: #555;
+            margin: 20px 0 8px 0;
+        }
+
+        p {
+            margin: 8px 0;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--accent);
+            padding: 12px 20px;
+            margin: 15px 0;
+            background: #f7f9fc;
+            border-radius: 0 6px 6px 0;
+        }
+
+        blockquote strong {
+            display: inline;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        thead th {
+            background-color: var(--primary);
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tbody tr:hover {
+            background-color: #eef2f7;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 12.5px;
+            color: #c0392b;
+        }
+
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 18px 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 12.5px;
+            line-height: 1.6;
+            border: 1px solid #333;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--code-text);
+        }
+
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .function { color: #dcdcaa; }
+
+        hr {
+            border: none;
+            border-top: 2px solid var(--light);
+            margin: 30px 0;
+        }
+
+        ul, ol {
+            margin: 8px 0 8px 25px;
+        }
+
+        li {
+            margin: 4px 0;
+        }
+
+        .checklist {
+            list-style: none;
+            margin-left: 5px;
+        }
+
+        .checklist li {
+            position: relative;
+            padding-left: 35px;
+            margin: 6px 0;
+        }
+
+        .checklist li .checkbox-icon {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 18px;
+            color: #999;
+        }
+
+        .checklist li.completed .checkbox-icon {
+            color: var(--success);
+        }
+
+        .checklist li.in-progress .checkbox-icon {
+            color: var(--warning);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .badge-red { background: var(--danger); }
+        .badge-yellow { background: var(--warning); }
+        .badge-white { background: #bbb; }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 5px solid;
+        }
+
+        .alert-warning {
+            background: #fef9e7;
+            border-left-color: var(--warning);
+        }
+
+        .alert-warning h4 {
+            color: var(--warning);
+            margin-top: 0;
+        }
+
+        .toc {
+            background: #f7f9fc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 30px;
+            margin: 20px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        .toc ol {
+            margin-left: 20px;
+        }
+
+        .toc li {
+            margin: 5px 0;
+        }
+
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .sprint-header {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 6px;
+            margin: 20px 0 10px 0;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .estimate-table {
+            margin-top: 5px;
+        }
+
+        .estimate-table tbody tr:last-child {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .estimate-table tbody tr:last-child td {
+            border-color: var(--primary);
+        }
+
+        .folder-tree {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 12.5px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 18px 20px;
+            border-radius: 8px;
+            line-height: 1.5;
+            border: 1px solid #333;
+        }
+
+        .folder-tree .folder { color: #dcdcaa; }
+        .folder-tree .file { color: #9cdcfe; }
+        .folder-tree .comment { color: #6a9955; }
+
+        @media print {
+            body {
+                font-size: 11px;
+                padding: 15px;
+                max-width: 100%;
+            }
+
+            pre {
+                font-size: 10px;
+                white-space: pre-wrap;
+            }
+
+            table {
+                font-size: 10px;
+                page-break-inside: avoid;
+            }
+
+            h2 {
+                page-break-before: always;
+            }
+
+            h2:first-of-type {
+                page-break-before: avoid;
+            }
+
+            .no-break {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+<h2 id="etapa5">CHECKLIST TÉCNICO:</h2>
+
+<div class="sprint-header">Sprint 0 — Setup do Projeto (1-2 dias)</div>
+<ul class="checklist">
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar projeto Django: <code>django-admin startproject config .</code>
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar apps: <code>base</code>, <code>usuarios</code>, <code>pacientes</code>, <code>medicos</code>, <code>agendas</code>, <code>enfermagem</code>, <code>financeiro</code>
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Configurar <code>settings.py</code>: MySQL backend, timezone <code>America/Sao_Paulo</code>, <code>AUTH_USER_MODEL</code>
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Instalar e configurar Tailwind CSS (django-tailwind ou CDN)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Configurar Alpine.js (CDN no base.html)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar <code>base.html</code> com estrutura master (navbar, footer, toast)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Configurar <code>django.contrib.messages</code> para substituir o toast PHP
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Configurar CSRF middleware (todos os POSTs AJAX precisam do token)
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 1 — Fundação (3-5 dias)</div>
+<ul class="checklist">
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar <code>AuditMixin</code> (abstract model com uscad, usalt, dtcad, dtalt)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar TODOS os models Nível 0 (app <code>core</code>): Unidade, Convenio, Especialidade, TipoConsulta, TipoExame, TipoMaterial, FormaPagamento, StatusAgendamento, Material, LogAuditoria
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar model customizado <code>Usuario</code> com <code>AbstractUser</code> (app <code>accounts</code>)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar model <code>Permissao</code> com todos os campos <code>MNU_*</code> e <code>CAMPO_*</code>, <code>TAB_*</code>
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar <code>LoginView</code> + <code>LogoutView</code> + middleware de sessão/permissões
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar template de Login (<code>login.html</code>)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar template Home (<code>home.html</code> com botões condicionais por permissão)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar template de navegação (<code>_navbar.html</code>) com permissões
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Rodar migrations e testar login
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 2 — Tabelas de Configuração (3-5 dias)</div>
+<ul class="checklist">
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar views genéricas (CreateView/UpdateView/ListView) para todas as tabelas Nível 0
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar template genérico <code>crud_list.html</code> e <code>crud_form.html</code> (reutilizar para 9 CRUDs)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Telas: Convênios, Formas de Pagamento, Especialidades, Tipos de Consulta/Exame/Material, Materiais, Unidades
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar CRUD de Usuários + tela de Permissões
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar models <code>Paciente</code>, <code>Medico</code>, <code>MedicoEspecialidade</code> e rodar migrations
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar CRUD Paciente (list com paginação server-side, form completo)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar CRUD Médico + gestão de Especialidades (M2M)
+    </li>
+    
+</ul>
+
+<div class="sprint-header">Sprint 3 — Pacientes e Médicos (2-3 dias)</div>
+<ul class="checklist">
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar API de busca de paciente (autocomplete → <code>/api/pacientes/buscar/</code>)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar proxy CEP (<code>/api/cep/&lt;cep&gt;/</code> chamando BrasilAPI)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar Alpine.js para busca de CEP automática e máscara de campos
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar <code>VacinaPaciente</code> model e CRUD vinculado ao paciente
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 4 — Agenda de Consultas (5-7 dias) ⚠️ Sprint mais complexa</div>
+<ul class="checklist">
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Criar models <code>MedicoAgendaConfig</code>, <code>Agenda</code>, <code>Consulta</code>
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar lógica de geração automática de agenda (config → slots do dia)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar tela de Agenda com Alpine.js (navegação dia, seleção médico)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar modal de agendamento (busca paciente, tipo consulta, especialidade, convênio)
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar ações: agendar, bloquear, liberar, cancelar, trocar status
+    </li>
+    <li class="completed">
+        <i class="fas fa-check-square checkbox-icon"></i>
+        Implementar Configuração de Horários do Médico por Unidade
+    </li>
+    <li class="in-progress">
+        <i class="fas fa-clock checkbox-icon"></i>
+        Implementar Agenda do Médico (visão filtrada pelo médico logado)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar <code>Procedimento</code> model e CRUD vinculado ao paciente
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 5 — Atendimento Médico (5-7 dias) ⚠️ Sprint mais complexa</div>
+<ul class="checklist">
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar tela de Atendimento Médico (carregar dados consulta + paciente + histórico)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar auto-save de anamnese/conduta via AJAX (Alpine.js <code>$fetch</code>)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Criar model <code>Receita</code> e implementar CRUDs (medicamentos + exames) na tela de atendimento
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar finalização de atendimento (atualizar consulta + agenda)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar templates de impressão de receita e pedido de exame
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 6 — Enfermagem (3-5 dias)</div>
+<ul class="checklist">
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Criar models <code>Autorizacao</code>, <code>AgendaEnfermagem</code>
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar tela de Autorizações (CRUD vinculado a procedimentos)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar tela de Liberações (visão de autorizações prontas para agendar)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar Agenda de Enfermagem (agendamento de procedimentos)
+    </li>
+</ul>
+
+<div class="sprint-header">Sprint 7 — Financeiro + Finalização (3-5 dias)</div>
+<ul class="checklist">
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Criar model <code>Financeiro</code> e implementar CRUD
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar lançamentos com filtros por data e tipo
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Integrar lançamentos automáticos (vacinas → financeiro)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Implementar sistema de Log de Auditoria (middleware ou signals Django)
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Substituir <code>backup_bd.php</code> por management command <code>dumpdata</code>
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Testes de integração end-to-end
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Finalizar CRUD + Tela de Permissões de Usuários
+    </li>
+    <li>
+        <i class="far fa-square checkbox-icon"></i>
+        Script de migração de dados do MySQL antigo → novo schema
+    </li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="estimativa">ESTIMATIVA TOTAL</h2>
+
+<table class="estimate-table">
+    <thead>
+        <tr><th>Sprint</th><th>Descrição</th><th>Dias estimados</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>0</td><td>Setup</td><td>1-2</td></tr>
+        <tr><td>1</td><td>Fundação (auth + login + home)</td><td>3-5</td></tr>
+        <tr><td>2</td><td>Config (9 CRUDs + usuários)</td><td>2-3</td></tr>
+        <tr><td>3</td><td>Pacientes + Médicos</td><td>3-5</td></tr>
+        <tr><td>4</td><td>Agenda de Consultas</td><td>5-7</td></tr>
+        <tr><td>5</td><td>Atendimento Médico</td><td>5-7</td></tr>
+        <tr><td>6</td><td>Enfermagem</td><td>3-5</td></tr>
+        <tr><td>7</td><td>Financeiro + Finalização</td><td>3-5</td></tr>
+        <tr><td><strong>Total</strong></td><td></td><td><strong>25-39 dias úteis</strong></td></tr>
+    </tbody>
+</table>
+
+<blockquote>
+    ⏱️ Considerar +30% para testes, migração de dados e ajustes de layout.
+</blockquote>
+
+</body>
+</html>

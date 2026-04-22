@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Financeiro{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+  <div class="vittas-page-header flex-col md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="page-title text-3xl font-bold"><i class="fa-solid fa-chart-line mr-2"></i>Financeiro</h1>
+      <p class="text-sm text-base-content/70">Resumo financeiro da clínica por competência.</p>
+    </div>
+    <form method="get" class="flex gap-2 items-end">
+      <div>
+        <label class="label py-1"><span class="label-text text-xs">Competência</span></label>
+        <input type="month" name="periodo" value="{{ periodo }}" class="input input-bordered input-sm">
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+      <a href="{% url 'financeiro:lancamento_create' %}" class="btn btn-success btn-sm">
+        <i class="fa-solid fa-plus"></i> Novo Lançamento
+      </a>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-4">
+        <span class="text-xs uppercase text-base-content/60">Receitas Previstas</span>
+        <strong class="text-2xl text-success">R$ {{ receitas_previstas|floatformat:2 }}</strong>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-4">
+        <span class="text-xs uppercase text-base-content/60">Receitas Recebidas</span>
+        <strong class="text-2xl text-success">R$ {{ receitas_recebidas|floatformat:2 }}</strong>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-4">
+        <span class="text-xs uppercase text-base-content/60">Pendentes</span>
+        <strong class="text-2xl text-warning">R$ {{ receitas_pendentes|floatformat:2 }}</strong>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-4">
+        <span class="text-xs uppercase text-base-content/60">Despesas Pagas</span>
+        <strong class="text-2xl text-error">R$ {{ despesas_pagas|floatformat:2 }}</strong>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-4">
+        <span class="text-xs uppercase text-base-content/60">Saldo do Período</span>
+        <strong class="text-2xl {% if saldo_periodo >= 0 %}text-primary{% else %}text-error{% endif %}">R$ {{ saldo_periodo|floatformat:2 }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <h2 class="card-title text-lg">Lançamentos Atrasados</h2>
+          <a href="{% url 'financeiro:lancamento_list' %}?status=ATRASADO" class="btn btn-ghost btn-sm">Ver todos</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Descrição</th>
+                <th>Vencimento</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in lancamentos_atrasados %}
+                <tr>
+                  <td>{{ item.cliente_display }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.data_vencimento|date:"d/m/Y" }}</td>
+                  <td>R$ {{ item.valor|floatformat:2 }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-base-content/60">Nenhum lançamento atrasado neste período.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <h2 class="card-title text-lg">Últimos Lançamentos</h2>
+          <a href="{% url 'financeiro:lancamento_list' %}" class="btn btn-ghost btn-sm">Abrir lista</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Cliente</th>
+                <th>Status</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in ultimos_lancamentos %}
+                <tr>
+                  <td>{{ item.get_tipo_display }}</td>
+                  <td>{{ item.cliente_display }}</td>
+                  <td><span class="badge badge-sm">{{ item.get_status_display }}</span></td>
+                  <td>R$ {{ item.valor|floatformat:2 }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-base-content/60">Nenhum lançamento encontrado.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

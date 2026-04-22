@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Médicos | Vittas{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4">
+  <div class="vittas-page-header">
+    <h1 class="page-title text-3xl font-bold">
+      <i class="fa-solid fa-user-doctor"></i> Médicos
+    </h1>
+    <a href="{% url 'medico:medico_create' %}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Novo Médico
+    </a>
+  </div>
+
+  <div class="bg-base-100 p-4 rounded-[1.5rem] shadow border border-white/10">
+    <form method="get" class="flex gap-2">
+      <input
+        type="text"
+        name="busca"
+        value="{{ request.GET.busca }}"
+        placeholder="Buscar por nome, CRM ou CPF..."
+        class="input input-bordered input-sm w-full max-w-md"
+      />
+      <button type="submit" class="btn btn-ghost btn-sm">
+        <i class="fas fa-search"></i> Buscar
+      </button>
+      {% if request.GET.busca %}
+      <a href="{% url 'medico:medico_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="overflow-x-auto bg-base-100 rounded-[1.5rem] shadow border border-white/10">
+    <table class="table table-zebra table-sm w-full">
+      <thead>
+        <tr>
+          <th>CRM</th>
+          <th>Nome</th>
+          <th>Celular</th>
+          <!-- <th>CPF</th> -->
+          <th>Unidade</th>
+          <th>Status</th>
+          <th class="w-24 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for medico in medicos %}
+        <tr>
+          <td>{{ medico.crm }}</td>
+          <td>
+            <div class="font-bold">{{ medico.nome }}</div>
+            <div class="text-sm opacity-60">{{ medico.email|default:"-" }}</div>
+          </td>
+          <!-- <td>{{ medico.cpf }}</td> -->
+          <td>{{ medico.celular|default:"-" }}</td>
+          <td>{{ medico.unidade|default:"-" }}</td>
+          <td>
+            {% if medico.status %}
+            <span class="badge badge-success badge-sm text-white">Ativo</span>
+            {% else %}
+            <span class="badge badge-ghost badge-sm">Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="flex justify-center gap-1">
+              <a href="{% url 'medico:medico_update' medico.pk %}" class="btn btn-sm btn-ghost" title="Editar">
+                <i class="fas fa-edit"></i> Editar
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center py-4 text-base-content/70">Nenhum médico encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="join justify-center mt-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}" class="join-item btn btn-sm">«</a>
+    {% else %}
+    <button class="join-item btn btn-sm btn-disabled">«</button>
+    {% endif %}
+
+    <button class="join-item btn btn-sm no-animation">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</button>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}" class="join-item btn btn-sm">»</a>
+    {% else %}
+    <button class="join-item btn btn-sm btn-disabled">»</button>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  function confirmarExclusaoMedico(url) {
+    window.openConfirmDialog(url, () => {
+      window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          type: 'success',
+          message: 'Médico excluído com sucesso!'
+        }
+      }));
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    });
+  }
+</script>
+{% endblock %}

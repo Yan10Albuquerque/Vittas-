@@ -1,0 +1,161 @@
+from datetime import date, time
+
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from agenda.models import Agenda
+from base.models import Convenio, Especialidade, StatusAgendamento, TipoConsulta
+from medico.models import Medico, MedicoAgenda, MedicoEspecialidade
+from paciente.models import Paciente
+from usuario.models import Clinica
+
+
+class AgendaModuleTests(TestCase):
+    def setUp(self):
+        self.clinica = Clinica.objects.create_user(
+            nome_fantasia="Clinica Agenda",
+            email="agenda@clinica.com",
+            password="123456",
+            plano=Clinica.Plano.PROFISSIONAL,
+        )
+        self.client.force_login(self.clinica)
+
+        self.convenio = Convenio.objects.create(clinica=self.clinica, nome="Particular")
+        self.especialidade = Especialidade.objects.create(clinica=self.clinica, descricao="Cardiologia")
+        self.tipo_consulta = TipoConsulta.objects.create(clinica=self.clinica, descricao="Consulta")
+        self.status_agendado = StatusAgendamento.objects.create(
+            clinica=self.clinica,
+            descricao="Agendado",
+            cor="btn-primary",
+            nivel=1,
+        )
+        self.status_em_atendimento = StatusAgendamento.objects.create(
+            clinica=self.clinica,
+            descricao="Em Atendimento",
+            cor="btn-warning",
+            nivel=2,
+        )
+        self.medico = Medico.objects.create(
+            clinica=self.clinica,
+            crm="12345",
+            nome="Dr. Agenda",
+        )
+        MedicoEspecialidade.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            especialidade=self.especialidade,
+        )
+        MedicoAgenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            hora=time(8, 0),
+        )
+        self.paciente = Paciente.objects.create(
+            clinica=self.clinica,
+            cpf="12345678900",
+            nome="Paciente Agenda",
+            celular="11999999999",
+            nascimento=date(1990, 1, 1),
+            convenio=self.convenio,
+        )
+
+    def test_agenda_consultas_view_renderiza(self):
+        response = self.client.get(
+            reverse("agenda:agenda_consultas"),
+            {"cod_medico": self.medico.pk, "data_agenda": timezone.localdate().isoformat()},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Agenda de Consultas e Exames")
+
+    def test_agenda_api_cria_horarios_a_partir_da_agenda_do_medico(self):
+        response = self.client.post(
+            reverse("agenda:agenda_api"),
+            {
+                "funcao": "criar_agenda",
+                "cod_medico": self.medico.pk,
+                "data_agenda": timezone.localdate().isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            Agenda.objects.filter(
+                clinica=self.clinica,
+                medico=self.medico,
+                data=timezone.localdate(),
+                hora=time(8, 0),
+            ).exists()
+        )
+
+    def test_agenda_api_salva_consulta(self):
+        agenda = Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            data=timezone.localdate(),
+            hora=time(9, 0),
+            status=Agenda.Status.DISPONIVEL,
+        )
+
+        response = self.client.post(
+            reverse("agenda:agenda_api"),
+            {
+                "funcao": "salvar_consulta",
+                "cod_agenda": agenda.pk,
+                "cod_paciente": self.paciente.pk,
+                "convenio_consulta": self.convenio.pk,
+                "cod_tipo_consulta": self.tipo_consulta.pk,
+                "cod_especialidade": self.especialidade.pk,
+                "cod_status_agendamento": self.status_agendado.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.paciente, self.paciente)
+        self.assertEqual(agenda.status, Agenda.Status.AGENDADO)
+        self.assertEqual(agenda.status_agendamento, self.status_agendado)
+
+    def test_atualiza_paciente_move_agenda_para_em_atendimento_sem_id_fixo(self):
+        agenda = Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            paciente=self.paciente,
+            convenio=self.convenio,
+            tipo_consulta=self.tipo_consulta,
+            especialidade=self.especialidade,
+            status_agendamento=self.status_agendado,
+            data=timezone.localdate(),
+            hora=time(10, 0),
+            status=Agenda.Status.AGENDADO,
+        )
+
+        response = self.client.post(
+            reverse("paciente:paciente_api"),
+            {
+                "funcao": "atualiza_paciente",
+                "cod_paciente": self.paciente.pk,
+                "cpf": self.paciente.cpf,
+                "nome": self.paciente.nome,
+                "celular": self.paciente.celular,
+                "email": "paciente@teste.com",
+                "documento": "RG123",
+                "nascimento": self.paciente.nascimento.isoformat(),
+                "sexo": "FEMININO",
+                "profissao": "Analista",
+                "cep": "01001000",
+                "endereco": "Rua Teste",
+                "numero": "10",
+                "bairro": "Centro",
+                "cidade": "Sao Paulo",
+                "estado": "SP",
+                "convenio": self.convenio.pk,
+                "num_carteira": "ABC123",
+                "cod_agenda": agenda.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.status_agendamento, self.status_em_atendimento)

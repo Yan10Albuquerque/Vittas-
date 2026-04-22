@@ -1,0 +1,30 @@
+{% load static %}
+
+<!-- Dialog de Confirmação de Exclusão - Reutilizável em todo o projeto -->
+<dialog id="confirm_delete_modal" 
+        class="modal" 
+        x-data="confirmDialogManager()"
+        x-ref="confirmModal"
+        x-init="init()">
+  <div class="modal-box max-w-lg">
+    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+      <i class="fas fa-exclamation-triangle text-warning"></i>
+      <span x-text="dialogTitle"></span>
+    </h3>
+    <p class="py-2 leading-7 text-base-content" x-text="dialogMessage"></p>
+    <p class="text-sm text-error font-semibold" x-show="dialogDetail" x-text="dialogDetail"></p>
+    <div class="modal-action">
+      <button @click="cancel()" class="btn btn-ghost btn-sm">Cancelar</button>
+      <button @click="confirm()" class="btn btn-sm" :class="confirmButtonClass" :disabled="isDeleting">
+        <template x-if="!isDeleting">
+          <i :class="confirmIcon"></i>
+        </template>
+        <span x-show="isDeleting" class="loading loading-spinner loading-xs"></span>
+        <span x-text="isDeleting ? 'Processando...' : confirmLabel"></span>
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button @click="cancel()">close</button>
+  </form>
+</dialog>

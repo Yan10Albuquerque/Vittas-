@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Categoria Financeira{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
+    <h1 class="text-2xl font-semibold">
+      <i class="fa-solid fa-tags mr-2"></i>
+      {% if object %}Editar Categoria{% else %}Nova Categoria{% endif %}
+    </h1>
+    <a class="btn btn-ghost btn-sm" href="{% url 'financeiro:categoria_list' %}">
+      <i class="fa-solid fa-reply"></i> Voltar
+    </a>
+  </div>
+
+  <form method="post" class="card bg-base-100 shadow">
+    {% csrf_token %}
+    <div class="card-body">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <label class="label"><span class="label-text">Descrição</span></label>
+          {{ form.descricao }}
+        </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text">Tipo</span></label>
+          {{ form.tipo }}
+        </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text">Cor</span></label>
+          {{ form.cor }}
+        </div>
+        <div class="form-control">
+          <label class="label"><span class="label-text">Status</span></label>
+          {{ form.status }}
+        </div>
+      </div>
+    </div>
+    <div class="card-actions justify-end px-6 pb-6">
+      <button class="btn btn-primary" type="submit">Salvar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
