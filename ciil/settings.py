@@ -20,117 +20,109 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-if (BASE_DIR / '.env').exists():
+if (BASE_DIR / ".env").exists():
     from dotenv import load_dotenv
-    load_dotenv(BASE_DIR / '.env')
+
+    load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-8*)qb=u810*9cwzjjoocc2zlx(bjrmukm889p7^kbj_(hk#)zr')
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-8*)qb=u810*9cwzjjoocc2zlx(bjrmukm889p7^kbj_(hk#)zr",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = False
 
-_raw_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
-default_hosts = ['127.0.0.1', 'localhost', 'testserver']
-for host in default_hosts:
-    if host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(host)
+ALLOWED_HOSTS = ["127.0.0.1", "vittas.onrender.com"]
 
-# Auto-allow the Railway public domain so deploys work without manual host edits.
-railway_public = os.getenv('RAILWAY_PUBLIC_DOMAIN', '').strip()
-if railway_public:
-    ALLOWED_HOSTS.append(railway_public)
 
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
-
-# Add Railway public domain (with https scheme) to CSRF trusted origins when available.
-if railway_public:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{railway_public}")
-
-# Also mirror allowed hosts into CSRF trusted origins with https when missing, to
-# avoid admin/login CSRF failures on the same host.
-for host in ALLOWED_HOSTS:
-    if host and f"https://{host}" not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o.strip()
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'base',
-    'simple_history',
-    'agenda',
-    'enfermagem',
-    'financeiro',
-    'medico',
-    'paciente',
-    'usuario',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "base",
+    "simple_history",
+    "agenda",
+    "enfermagem",
+    "financeiro",
+    "medico",
+    "paciente",
+    "usuario",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'ciil.urls'
+ROOT_URLCONF = "ciil.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'usuario.context_processors.unidades_context',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "usuario.context_processors.unidades_context",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ciil.wsgi.application'
+WSGI_APPLICATION = "ciil.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-db_engine = os.getenv('DB_ENGINE', 'sqlite').lower()
+db_engine = os.getenv("DB_ENGINE", "sqlite").lower()
 
-if db_engine == 'mysql':
+if db_engine == "mysql":
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('DB_NAME', 'ciil'),
-            'USER': os.getenv('DB_USER', 'ciil_user'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '3306'),
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "postgres",  # Database name do Supabase
+            "USER": "postgres.iryvngxlarvnrqdmnyqt",  # Usuário
+            "PASSWORD": "WVdxT8SjrxWvQknD",
+            "HOST": "aws-1-sa-east-1.pooler.supabase.com",
+            "PORT": "6543",
+            "OPTIONS": {
+                "sslmode": "require",  # obrigatório no Render
+            },
         }
     }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                'timeout': int(os.getenv('SQLITE_TIMEOUT', '20')),
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": {
+                "timeout": int(os.getenv("SQLITE_TIMEOUT", "20")),
             },
         }
     }
@@ -141,16 +133,16 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -158,9 +150,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'pt-br'
+LANGUAGE_CODE = "pt-br"
 
-TIME_ZONE = 'America/Sao_Paulo'
+TIME_ZONE = "America/Sao_Paulo"
 
 USE_I18N = True
 
@@ -170,7 +162,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -185,11 +177,11 @@ if DEBUG:
 else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # APontando o modelo de autenticação personalizado
-AUTH_USER_MODEL = 'usuario.Clinica'
+AUTH_USER_MODEL = "usuario.Clinica"
 
-LOGIN_REDIRECT_URL = '/home/'
-LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = "/home/"
+LOGIN_URL = "/login/"
