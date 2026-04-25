@@ -188,6 +188,19 @@
         .mobile-menu.open {
             max-height: 400px;
         }
+
+        @media (max-width: 767px) {
+            .pricing-popular::before {
+                top: -12px;
+                padding: 4px 12px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+
+            .faq-answer.open {
+                max-height: 420px;
+            }
+        }
     </style>
     <style>
         body {
@@ -198,12 +211,13 @@
 </head>
 
 <body class="h-full bg-midnight text-white overflow-auto">
+    {% with whatsapp_link="https://wa.me/5522988194727?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Vittas%20e%20gostaria%20de%20solicitar%20uma%20demonstra%C3%A7%C3%A3o%20do%20sistema%20para%20minha%20clinica." %}
     <div id="app" class="w-full h-full"><!-- Scroll Progress -->
         <div id="scrollProgress"
             class="scroll-progress fixed top-0 left-0 w-full h-[3px] bg-gradient-to-r from-ocean to-mint z-[60]"></div>
         <!-- Navbar -->
         <nav class="fixed top-0 w-full z-50 nav-blur bg-midnight/70 border-b border-white/5">
-            <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between"><a href="#"
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3"><a href="#"
                     class="flex items-center gap-2">
                     <div class="w-auto h-10 rounded-xl  from-ocean to-mint flex items-center justify-center ">
                         <img src="{% static 'img/vittasNavBlack.png' %}" alt="Vittas Icon" class="w-full h-full object-contain">
@@ -213,47 +227,47 @@
                         class="hover:text-mint transition">Funcionalidades</a> <a href="#beneficios"
                         class="hover:text-mint transition">Benefícios</a> <a href="#planos"
                         class="hover:text-mint transition">Planos</a> <a href="#faq"
-                        class="hover:text-mint transition">FAQ</a> <a href="#cta-final"
+                        class="hover:text-mint transition">FAQ</a> <a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
                         class="bg-ocean hover:bg-ocean/80 text-white px-5 py-2.5 rounded-xl font-semibold transition"
                         id="navCta">Solicitar Demo</a>
                 </div><button id="menuToggle" class="md:hidden text-gray-300 hover:text-white transition"
                     aria-label="Menu"> <i data-lucide="menu" style="width:24px;height:24px;"></i> </button>
             </div>
-            <div id="mobileMenu" class="mobile-menu md:hidden px-6 bg-midnight/95 border-t border-white/5">
+            <div id="mobileMenu" class="mobile-menu md:hidden px-4 sm:px-6 bg-midnight/95 border-t border-white/5">
                 <div class="flex flex-col gap-4 py-4 text-sm text-gray-300"><a href="#funcionalidades"
                         class="hover:text-mint transition">Funcionalidades</a> <a href="#beneficios"
                         class="hover:text-mint transition">Benefícios</a> <a href="#planos"
                         class="hover:text-mint transition">Planos</a> <a href="#faq"
-                        class="hover:text-mint transition">FAQ</a> <a href="#cta-final"
+                        class="hover:text-mint transition">FAQ</a> <a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
                         class="bg-ocean text-white px-5 py-2.5 rounded-xl font-semibold text-center transition">Solicitar
                         Demo</a>
                 </div>
             </div>
         </nav><!-- HERO -->
-        <section class="hero-bg pt-28 pb-20 md:pt-40 md:pb-32 px-6">
-            <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        <section class="hero-bg pt-24 pb-16 md:pt-40 md:pb-32 px-4 sm:px-6">
+            <div class="max-w-7xl mx-auto items-center gap-12 lg:gap-20">
                 <div class="flex-1 text-center lg:text-left">
                     <div
-                        class="inline-flex items-center gap-2 bg-ocean/10 border border-ocean/20 rounded-full px-4 py-1.5 mb-6 text-sm text-mint">
+                        class="inline-flex max-w-full items-center gap-2 bg-ocean/10 border border-ocean/20 rounded-full px-4 py-1.5 mb-6 text-xs sm:text-sm text-mint">
                         <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Solução ideal para clínicas
                         modernas
                     </div>
                     <h1 id="heroTitle"
-                        class="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Sua clínica
+                        class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Sua clínica
                         no <span class="text-transparent bg-clip-text bg-gradient-to-r from-ocean to-mint">controle
                             total</span>, do agendamento ao financeiro</h1>
                     <p id="heroSubtitle"
-                        class="text-lg md:text-xl text-gray-400 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+                        class="text-base sm:text-lg md:text-xl text-gray-400 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
                         Automatize processos, organize sua agenda e tenha visão completa da sua operação. Mais
                         produtividade, menos retrabalho.</p>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"><a href="#cta-final"
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"><a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
                             id="ctaPrimary"
-                            class="glow-btn bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white px-8 py-4 rounded-2xl font-semibold text-lg transition-all text-center">Solicitar
+                            class="glow-btn w-full sm:w-auto bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white px-6 sm:px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all text-center">Solicitar
                             Demonstração</a> <a href="#planos" id="ctaSecondary"
-                            class="border border-white/10 hover:border-ocean/40 text-white px-8 py-4 rounded-2xl font-semibold text-lg transition-all text-center hover:bg-white/5">Testar
+                            class="w-full sm:w-auto border border-white/10 hover:border-ocean/40 text-white px-6 sm:px-8 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all text-center hover:bg-white/5">Testar
                             Agora</a>
                     </div>
-                    <div class="flex items-center gap-6 mt-8 justify-center lg:justify-start text-sm text-gray-500">
+                    <div class="flex flex-wrap items-center gap-4 sm:gap-6 mt-8 justify-center lg:justify-start text-sm text-gray-500">
                         <span class="flex items-center gap-1.5"><i data-lucide="check-circle"
                                 style="width:16px;height:16px;color:#34D399;"></i> Sem instalação</span> <span
                             class="flex items-center gap-1.5"><i data-lucide="check-circle"
@@ -261,104 +275,10 @@
                             class="flex items-center gap-1.5"><i data-lucide="check-circle"
                                 style="width:16px;height:16px;color:#34D399;"></i> Suporte humano</span>
                     </div>
-                </div><!-- Dashboard mockup -->
-                <div class="flex-1 max-w-xl w-full">
-                    <div class="bg-slate/80 border border-white/10 rounded-3xl p-1 shadow-2xl shadow-ocean/10">
-                        <div class="bg-slate rounded-[20px] overflow-hidden"><!-- Topbar -->
-                            <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-                                <div class="flex gap-1.5">
-                                    <div class="w-3 h-3 rounded-full bg-red-400/80"></div>
-                                    <div class="w-3 h-3 rounded-full bg-yellow-400/80"></div>
-                                    <div class="w-3 h-3 rounded-full bg-green-400/80"></div>
-                                </div>
-                                <div class="flex-1 text-center text-xs text-gray-500">
-                                    app.vittas.com.br
-                                </div>
-                            </div>
-                            <div class="p-5 space-y-4"><!-- Stats row -->
-                                <div class="grid grid-cols-3 gap-3">
-                                    <div class="bg-midnight/60 rounded-xl p-3 text-center">
-                                        <div class="text-mint text-xl font-bold">
-                                            248
-                                        </div>
-                                        <div class="text-[11px] text-gray-500">
-                                            Pacientes
-                                        </div>
-                                    </div>
-                                    <div class="bg-midnight/60 rounded-xl p-3 text-center">
-                                        <div class="text-ocean text-xl font-bold">
-                                            32
-                                        </div>
-                                        <div class="text-[11px] text-gray-500">
-                                            Hoje
-                                        </div>
-                                    </div>
-                                    <div class="bg-midnight/60 rounded-xl p-3 text-center">
-                                        <div class="text-emerald-400 text-xl font-bold">
-                                            97%
-                                        </div>
-                                        <div class="text-[11px] text-gray-500">
-                                            Satisfação
-                                        </div>
-                                    </div>
-                                </div><!-- Chart mock -->
-                                <div class="bg-midnight/60 rounded-xl p-4">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <span class="text-xs text-gray-400">Atendimentos semanais</span><span
-                                            class="text-xs text-mint">+18%</span>
-                                    </div>
-                                    <div class="flex items-end gap-2 h-20">
-                                        <div class="flex-1 bg-ocean/30 rounded-t-md" style="height:40%"></div>
-                                        <div class="flex-1 bg-ocean/40 rounded-t-md" style="height:55%"></div>
-                                        <div class="flex-1 bg-ocean/50 rounded-t-md" style="height:45%"></div>
-                                        <div class="flex-1 bg-ocean/60 rounded-t-md" style="height:70%"></div>
-                                        <div class="flex-1 bg-ocean/70 rounded-t-md" style="height:85%"></div>
-                                        <div class="flex-1 bg-mint/80 rounded-t-md" style="height:100%"></div>
-                                        <div class="flex-1 bg-ocean/50 rounded-t-md shimmer" style="height:90%"></div>
-                                    </div>
-                                </div><!-- Agenda mock -->
-                                <div class="bg-midnight/60 rounded-xl p-4 space-y-2">
-                                    <div class="text-xs text-gray-400 mb-2">
-                                        Próximos atendimentos
-                                    </div>
-                                    <div class="flex items-center gap-3 bg-white/5 rounded-lg p-2.5">
-                                        <div
-                                            class="w-8 h-8 rounded-full bg-ocean/20 flex items-center justify-center text-mint text-xs font-bold">
-                                            MC
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="text-sm">
-                                                Maria Costa
-                                            </div>
-                                            <div class="text-[11px] text-gray-500">
-                                                Consulta — 09:30
-                                            </div>
-                                        </div>
-                                        <div class="w-2 h-2 rounded-full bg-mint"></div>
-                                    </div>
-                                    <div class="flex items-center gap-3 bg-white/5 rounded-lg p-2.5">
-                                        <div
-                                            class="w-8 h-8 rounded-full bg-ocean/20 flex items-center justify-center text-mint text-xs font-bold">
-                                            RS
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="text-sm">
-                                                Roberto Silva
-                                            </div>
-                                            <div class="text-[11px] text-gray-500">
-                                                Retorno — 10:15
-                                            </div>
-                                        </div>
-                                        <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section><!-- DORES -->
-        <section class="py-20 md:py-28 px-6 bg-midnight relative overflow-hidden">
+        <section class="py-16 md:py-28 px-4 sm:px-6 bg-midnight relative overflow-hidden">
             <div
                 class="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/5 to-transparent pointer-events-none">
             </div>
@@ -428,12 +348,12 @@
                 </div>
             </div>
         </section><!-- SOLUÇÃO -->
-        <section class="py-20 md:py-28 px-6 relative">
+        <section class="py-16 md:py-28 px-4 sm:px-6 relative">
             <div
                 class="absolute inset-0 bg-gradient-to-b from-transparent via-ocean/5 to-transparent pointer-events-none">
             </div>
             <div class="max-w-6xl mx-auto relative">
-                <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="flex flex-col lg:flex-row items-center gap-10 md:gap-16">
                     <div class="flex-1 fade-up"><span
                             class="text-mint text-sm font-semibold uppercase tracking-widest">A solução</span>
                         <h2 class="font-display text-3xl md:text-4xl font-bold mt-3 mb-6">O Vittas transforma a gestão
@@ -491,7 +411,7 @@
                 </div>
             </div>
         </section><!-- FUNCIONALIDADES -->
-        <section id="funcionalidades" class="py-20 md:py-28 px-6 bg-slate/30">
+        <section id="funcionalidades" class="py-16 md:py-28 px-4 sm:px-6 bg-slate/30">
             <div class="max-w-6xl mx-auto">
                 <div class="text-center mb-16 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">Funcionalidades</span>
@@ -559,7 +479,7 @@
                 </div>
             </div>
         </section><!-- BENEFÍCIOS -->
-        <section id="beneficios" class="py-20 md:py-28 px-6">
+        <section id="beneficios" class="py-16 md:py-28 px-4 sm:px-6">
             <div class="max-w-6xl mx-auto">
                 <div class="text-center mb-16 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">Benefícios</span>
@@ -568,7 +488,7 @@
                     <p class="text-gray-400 max-w-2xl mx-auto">Clínicas que usam o Vittas economizam tempo, reduzem
                         erros e crescem com consistência.</p>
                 </div>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                     <div class="fade-up text-center">
                         <div
                             class="text-4xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-ocean to-mint mb-2">
@@ -621,7 +541,7 @@
                 </div>
             </div>
         </section><!-- DASHBOARD VISUAL -->
-        <section class="py-20 md:py-28 px-6 bg-slate/20 overflow-hidden">
+        <section class="py-16 md:py-28 px-4 sm:px-6 bg-slate/20 overflow-hidden">
             <div class="max-w-6xl mx-auto">
                 <div class="text-center mb-12 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">Plataforma</span>
@@ -629,127 +549,10 @@
                     <p class="text-gray-400 max-w-2xl mx-auto">Um painel intuitivo que mostra tudo que você precisa para
                         tomar as melhores decisões.</p>
                 </div>
-                <div class="fade-up bg-slate/80 border border-white/10 rounded-3xl p-6 md:p-8 max-w-4xl mx-auto">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-midnight/60 rounded-xl p-4">
-                            <div class="text-[11px] text-gray-500 mb-1">
-                                Receita mensal
-                            </div>
-                            <div class="text-xl font-bold text-mint">
-                                R$ 84.200
-                            </div>
-                            <div class="text-[10px] text-green-400 mt-1">
-                                ↑ 12% vs mês anterior
-                            </div>
-                        </div>
-                        <div class="bg-midnight/60 rounded-xl p-4">
-                            <div class="text-[11px] text-gray-500 mb-1">
-                                Atendimentos
-                            </div>
-                            <div class="text-xl font-bold text-white">
-                                1.248
-                            </div>
-                            <div class="text-[10px] text-green-400 mt-1">
-                                ↑ 8% vs mês anterior
-                            </div>
-                        </div>
-                        <div class="bg-midnight/60 rounded-xl p-4">
-                            <div class="text-[11px] text-gray-500 mb-1">
-                                Taxa de retorno
-                            </div>
-                            <div class="text-xl font-bold text-ocean">
-                                78%
-                            </div>
-                            <div class="text-[10px] text-green-400 mt-1">
-                                ↑ 5% vs mês anterior
-                            </div>
-                        </div>
-                        <div class="bg-midnight/60 rounded-xl p-4">
-                            <div class="text-[11px] text-gray-500 mb-1">
-                                NPS
-                            </div>
-                            <div class="text-xl font-bold text-emerald-400">
-                                92
-                            </div>
-                            <div class="text-[10px] text-green-400 mt-1">
-                                Excelente
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div class="bg-midnight/60 rounded-xl p-5">
-                            <div class="text-xs text-gray-400 mb-3">
-                                Receita por especialidade
-                            </div>
-                            <div class="space-y-3">
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span>Dermatologia</span><span class="text-mint">R$ 32.400</span>
-                                    </div>
-                                    <div class="w-full h-2 bg-midnight rounded-full">
-                                        <div class="h-full bg-gradient-to-r from-ocean to-mint rounded-full"
-                                            style="width:85%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span>Ortopedia</span><span class="text-mint">R$ 24.800</span>
-                                    </div>
-                                    <div class="w-full h-2 bg-midnight rounded-full">
-                                        <div class="h-full bg-gradient-to-r from-ocean to-mint rounded-full"
-                                            style="width:65%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span>Cardiologia</span><span class="text-mint">R$ 18.200</span>
-                                    </div>
-                                    <div class="w-full h-2 bg-midnight rounded-full">
-                                        <div class="h-full bg-gradient-to-r from-ocean to-mint rounded-full"
-                                            style="width:48%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span>Pediatria</span><span class="text-mint">R$ 8.800</span>
-                                    </div>
-                                    <div class="w-full h-2 bg-midnight rounded-full">
-                                        <div class="h-full bg-gradient-to-r from-ocean to-mint rounded-full"
-                                            style="width:23%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-midnight/60 rounded-xl p-5">
-                            <div class="text-xs text-gray-400 mb-3">
-                                Ocupação da agenda
-                            </div>
-                            <div class="flex items-center justify-center h-32">
-                                <svg viewbox="0 0 120 120" class="w-28 h-28">
-                                    <circle cx="60" cy="60" r="50" stroke="#1E293B" stroke-width="10" fill="none" />
-                                    <circle cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="10" fill="none"
-                                        stroke-dasharray="268" stroke-dashoffset="54" stroke-linecap="round"
-                                        transform="rotate(-90 60 60)" />
-                                    <defs>
-                                        <lineargradient id="grad">
-                                            <stop offset="0%" stop-color="#0E7C6B" />
-                                            <stop offset="100%" stop-color="#34D399" />
-                                        </lineargradient>
-                                    </defs> <text x="60" y="58" text-anchor="middle" fill="white" font-size="18"
-                                        font-weight="bold" font-family="DM Sans">
-                                        80%
-                                    </text> <text x="60" y="74" text-anchor="middle" fill="#9CA3AF" font-size="9"
-                                        font-family="DM Sans">
-                                        ocupação
-                                    </text>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <img src="{% static 'img/financeiro.png' %}" alt="Dashboard Vittas" class="w-full rounded-2xl sm:rounded-3xl mb-12 shadow-lg shimmer">
             </div>
         </section><!-- PROVA SOCIAL -->
-        <section class="py-20 md:py-28 px-6">
+        <section class="py-16 md:py-28 px-4 sm:px-6">
             <div class="max-w-6xl mx-auto">
                 <div class="text-center mb-16 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">Depoimentos</span>
@@ -774,7 +577,7 @@
                                     Dra. Ana Beatriz
                                 </div>
                                 <div class="text-xs text-gray-500">
-                                    Dermatologista — São Paulo
+                                    Dermatologista
                                 </div>
                             </div>
                         </div>
@@ -796,7 +599,7 @@
                                     Dr. Ricardo Mendes
                                 </div>
                                 <div class="text-xs text-gray-500">
-                                    Ortopedista — Curitiba
+                                    Ortopedista
                                 </div>
                             </div>
                         </div>
@@ -818,7 +621,7 @@
                                     Juliana Oliveira
                                 </div>
                                 <div class="text-xs text-gray-500">
-                                    Secretária — Belo Horizonte
+                                    Secretária 
                                 </div>
                             </div>
                         </div>
@@ -826,93 +629,70 @@
                 </div>
             </div>
         </section><!-- PLANOS -->
-        <section id="planos" class="py-20 md:py-28 px-6 bg-slate/30">
+        <section id="planos" class="py-16 md:py-28 px-4 sm:px-6 bg-slate/30">
             <div class="max-w-5xl mx-auto">
                 <div class="text-center mb-16 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">Planos</span>
                     <h2 class="font-display text-3xl md:text-4xl font-bold mt-3 mb-4">Escolha o plano ideal</h2>
-                    <p class="text-gray-400">Todos os planos incluem 14 dias grátis. Cancele quando quiser.</p>
+                    <p class="text-gray-400">Dois planos objetivos, com 7 dias grátis e cancelamento sem burocracia.</p>
                 </div>
-                <div class="grid md:grid-cols-3 gap-6"><!-- Starter -->
-                    <div class="fade-up bg-midnight/60 border border-white/10 rounded-2xl p-7 flex flex-col">
-                        <h3 class="font-semibold text-lg mb-1">Starter</h3>
-                        <p class="text-xs text-gray-500 mb-5">Para clínicas em início de organização</p>
-                        <div class="mb-6">
-                            <span class="text-sm text-gray-400">R$</span><span id="priceStarter"
-                                class="text-4xl font-bold font-display"> 197</span><span
-                                class="text-sm text-gray-500">/mês</span>
-                        </div>
-                        <ul class="space-y-3 text-sm text-gray-400 mb-8 flex-1">
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Até 2 profissionais</li>
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Agendamento online</li>
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Cadastro de pacientes</li>
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Prontuário eletrônico</li>
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Suporte por e-mail</li>
-                        </ul><a href="#cta-final"
-                            class="block text-center border border-ocean/30 hover:bg-ocean/10 text-white py-3 rounded-xl font-semibold transition">Começar
-                            Grátis</a>
-                    </div><!-- Profissional -->
+                <div class="grid md:grid-cols-2 gap-6">
                     <div
-                        class="fade-up fade-up-delay-1 pricing-popular bg-midnight/60 border-white/10 rounded-2xl p-7 flex flex-col">
+                        class="fade-up fade-up-delay-1 pricing-popular bg-midnight/60 border-white/10 rounded-2xl p-6 sm:p-7 flex flex-col">
                         <h3 class="font-semibold text-lg mb-1">Profissional</h3>
-                        <p class="text-xs text-gray-500 mb-5">Para clínicas que querem escalar</p>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-5">Para clínicas que querem operação completa sem o módulo de enfermagem</p>
                         <div class="mb-6">
                             <span class="text-sm text-gray-400">R$</span><span id="pricePro"
-                                class="text-4xl font-bold font-display"> 397</span><span
+                                class="text-3xl sm:text-4xl font-bold font-display"> 197</span><span
                                 class="text-sm text-gray-500">/mês</span>
                         </div>
                         <ul class="space-y-3 text-sm text-gray-400 mb-8 flex-1">
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Até 10 profissionais</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Cadastro de pacientes e prontuário eletrônico</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Tudo do Starter</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Cadastro de médicos, agenda e controle de atendimentos</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Controle financeiro</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Módulo financeiro completo</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Relatórios inteligentes</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Cadastros e configurações da clínica</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Lembretes por WhatsApp</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Relatórios e visão operacional</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Suporte prioritário</li>
-                        </ul><a href="#cta-final"
-                            class="block text-center bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white py-3 rounded-xl font-semibold transition glow-btn">Começar
-                            Grátis</a>
-                    </div><!-- Enterprise -->
+                                    style="width:14px;height:14px;color:#34D399;"></i> Sem acesso ao módulo de enfermagem</li>
+                        </ul><a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
+                            class="block w-full text-center bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white py-3 rounded-xl font-semibold transition glow-btn">Começar
+                            Agora</a>
+                    </div>
                     <div
-                        class="fade-up fade-up-delay-2 bg-midnight/60 border border-white/10 rounded-2xl p-7 flex flex-col">
+                        class="fade-up fade-up-delay-2 bg-midnight/60 border border-white/10 rounded-2xl p-6 sm:p-7 flex flex-col">
                         <h3 class="font-semibold text-lg mb-1">Enterprise</h3>
-                        <p class="text-xs text-gray-500 mb-5">Para clínicas com múltiplas unidades</p>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-5">Para clínicas que querem acesso total, incluindo enfermagem</p>
                         <div class="mb-6">
                             <span class="text-sm text-gray-400">R$</span><span id="priceEnterprise"
-                                class="text-4xl font-bold font-display"> 697</span><span
+                                class="text-3xl sm:text-4xl font-bold font-display"> 230</span><span
                                 class="text-sm text-gray-500">/mês</span>
                         </div>
                         <ul class="space-y-3 text-sm text-gray-400 mb-8 flex-1">
-                            <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Profissionais ilimitados</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
                                     style="width:14px;height:14px;color:#34D399;"></i> Tudo do Profissional</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Multi-unidades</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Módulo de enfermagem liberado</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> API e integrações</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Fluxo completo de autorizações e procedimentos</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Gerente de conta dedicado</li>
+                                    style="width:14px;height:14px;color:#34D399;"></i> Mais controle da operação clínica</li>
                             <li class="flex items-center gap-2"><i data-lucide="check"
-                                    style="width:14px;height:14px;color:#34D399;"></i> Implantação assistida</li>
-                        </ul><a href="#cta-final"
-                            class="block text-center border border-ocean/30 hover:bg-ocean/10 text-white py-3 rounded-xl font-semibold transition">Falar
+                                    style="width:14px;height:14px;color:#34D399;"></i> Suporte prioritário</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check"
+                                    style="width:14px;height:14px;color:#34D399;"></i> Melhor opção para clínicas com equipe assistencial</li>
+                        </ul><a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
+                            class="block w-full text-center border border-ocean/30 hover:bg-ocean/10 text-white py-3 rounded-xl font-semibold transition">Falar
                             com Consultor</a>
                     </div>
                 </div>
             </div>
         </section><!-- FAQ -->
-        <section id="faq" class="py-20 md:py-28 px-6">
+        <section id="faq" class="py-16 md:py-28 px-4 sm:px-6">
             <div class="max-w-3xl mx-auto">
                 <div class="text-center mb-16 fade-up"><span
                         class="text-mint text-sm font-semibold uppercase tracking-widest">FAQ</span>
@@ -920,7 +700,7 @@
                 </div>
                 <div class="space-y-3 fade-up" id="faqList">
                     <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
+                            class="faq-toggle w-full flex items-start justify-between gap-4 p-4 sm:p-5 text-left hover:bg-white/[0.02] transition"
                             onclick="toggleFaq(this)"> <span class="font-semibold text-sm">O Vittas serve para qualquer
                                 tipo de clínica?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
                                 class="shrink-0 transition-transform duration-300"></i> </button>
@@ -931,7 +711,7 @@
                         </div>
                     </div>
                     <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
+                            class="faq-toggle w-full flex items-start justify-between gap-4 p-4 sm:p-5 text-left hover:bg-white/[0.02] transition"
                             onclick="toggleFaq(this)"> <span class="font-semibold text-sm">Preciso instalar alguma
                                 coisa?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
                                 class="shrink-0 transition-transform duration-300"></i> </button>
@@ -940,29 +720,19 @@
                                 Basta fazer login e começar a usar em qualquer dispositivo.</p>
                         </div>
                     </div>
+                    
                     <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
-                            onclick="toggleFaq(this)"> <span class="font-semibold text-sm">Posso acessar pelo
-                                celular?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
-                                class="shrink-0 transition-transform duration-300"></i> </button>
-                        <div class="faq-answer px-5 pb-5">
-                            <p class="text-sm text-gray-400">Com certeza! O Vittas é totalmente responsivo e funciona
-                                perfeitamente em celulares, tablets e computadores.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
+                            class="faq-toggle w-full flex items-start justify-between gap-4 p-4 sm:p-5 text-left hover:bg-white/[0.02] transition"
                             onclick="toggleFaq(this)"> <span class="font-semibold text-sm">Existe suporte
                                 técnico?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
                                 class="shrink-0 transition-transform duration-300"></i> </button>
                         <div class="faq-answer px-5 pb-5">
-                            <p class="text-sm text-gray-400">Sim! Oferecemos suporte humanizado por chat, e-mail e
-                                WhatsApp. No plano Profissional e Enterprise, o suporte é prioritário com tempo de
+                            <p class="text-sm text-gray-400">Sim! Oferecemos suporte humanizado por WhatsApp. No plano Enterprise, o suporte é prioritário com tempo de
                                 resposta reduzido.</p>
                         </div>
                     </div>
                     <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
+                            class="faq-toggle w-full flex items-start justify-between gap-4 p-4 sm:p-5 text-left hover:bg-white/[0.02] transition"
                             onclick="toggleFaq(this)"> <span class="font-semibold text-sm">Meus dados estão
                                 seguros?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
                                 class="shrink-0 transition-transform duration-300"></i> </button>
@@ -973,19 +743,19 @@
                         </div>
                     </div>
                     <div class="faq-item border border-white/10 rounded-xl overflow-hidden"><button
-                            class="faq-toggle w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition"
+                            class="faq-toggle w-full flex items-start justify-between gap-4 p-4 sm:p-5 text-left hover:bg-white/[0.02] transition"
                             onclick="toggleFaq(this)"> <span class="font-semibold text-sm">Posso cancelar a qualquer
                                 momento?</span> <i data-lucide="chevron-down" style="width:18px;height:18px;"
                                 class="shrink-0 transition-transform duration-300"></i> </button>
                         <div class="faq-answer px-5 pb-5">
                             <p class="text-sm text-gray-400">Sim. Não temos fidelidade. Você pode cancelar a qualquer
-                                momento diretamente no painel, sem burocracia.</p>
+                                momento entrando em contato conosco, sem burocracia.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section><!-- CTA FINAL -->
-        <section id="cta-final" class="py-20 md:py-28 px-6 relative overflow-hidden">
+        <section id="cta-final" class="py-16 md:py-28 px-4 sm:px-6 relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-ocean/20 via-midnight to-mint/10 pointer-events-none">
             </div>
             <div class="max-w-3xl mx-auto text-center relative fade-up">
@@ -997,11 +767,11 @@
                     sua clínica?</h2>
                 <p class="text-gray-400 text-lg mb-10 max-w-xl mx-auto">Comece agora com 7 dias grátis. Sem cartão de
                     crédito, sem compromisso. Descubra por que sua clínica deveria escolher o Vittas.</p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center"><a href="#"
-                        class="glow-btn bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white px-10 py-4 rounded-2xl font-semibold text-lg transition-all inline-flex items-center justify-center gap-2">
+                <div class="flex flex-col sm:flex-row gap-4 justify-center"><a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
+                        class="glow-btn w-full sm:w-auto bg-gradient-to-r from-ocean to-emerald-600 hover:from-ocean/90 hover:to-emerald-500 text-white px-6 sm:px-10 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all inline-flex items-center justify-center gap-2">
                         <i data-lucide="play" style="width:18px;height:18px;"></i> Solicitar Demonstração </a> <a
-                        href="#"
-                        class="border border-white/10 hover:border-mint/30 text-white px-10 py-4 rounded-2xl font-semibold text-lg transition-all inline-flex items-center justify-center gap-2 hover:bg-white/5">
+                        href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer"
+                        class="w-full sm:w-auto border border-white/10 hover:border-mint/30 text-white px-6 sm:px-10 py-4 rounded-2xl font-semibold text-base sm:text-lg transition-all inline-flex items-center justify-center gap-2 hover:bg-white/5">
                         <svg viewbox="0 0 24 24" fill="#25D366" class="w-5 h-5">
                             <path
                                 d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -1009,7 +779,7 @@
                 </div>
             </div>
         </section><!-- FOOTER -->
-        <footer class="border-t border-white/5 py-12 px-6 bg-midnight">
+        <footer class="border-t border-white/5 py-12 px-4 sm:px-6 bg-midnight">
             <div class="max-w-6xl mx-auto">
                 <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-center gap-4">
                     <div class="w-20 h-10 rounded-lg from-ocean to-mint flex items-center justify-center">
@@ -1019,8 +789,8 @@
                 </div>
             </div>
         </footer><!-- WhatsApp Float --> 
-        <a href="#"
-            class="wa-float fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 hover:bg-green-400 transition">
+        <a href="{{ whatsapp_link }}" target="_blank" rel="noopener noreferrer" aria-label="Falar no WhatsApp"
+            class="wa-float fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 hover:bg-green-400 transition">
             <svg viewbox="0 0 24 24" fill="white" class="w-7 h-7">
                 <path
                     d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -1028,6 +798,7 @@
         </a>
 
     </div>
+    {% endwith %}
     
     <script>
         // Default config
@@ -1043,9 +814,8 @@
             hero_subtitle: 'Automatize processos, organize sua agenda e tenha visão completa da sua operação. Mais produtividade, menos retrabalho.',
             cta_primary: 'Solicitar Demonstração',
             cta_secondary: 'Testar Agora',
-            plan_price_starter: '197',
-            plan_price_pro: '397',
-            plan_price_enterprise: '697'
+            plan_price_pro: '197',
+            plan_price_enterprise: '230'
         };
 
         function applyConfig(config) {
@@ -1081,8 +851,6 @@
             if (navCta) navCta.textContent = (config.cta_primary || defaultConfig.cta_primary).substring(0, 16);
 
             // Prices
-            const ps = document.getElementById('priceStarter');
-            if (ps) ps.textContent = ` ${config.plan_price_starter || defaultConfig.plan_price_starter}`;
             const pp = document.getElementById('pricePro');
             if (pp) pp.textContent = ` ${config.plan_price_pro || defaultConfig.plan_price_pro}`;
             const pe = document.getElementById('priceEnterprise');
@@ -1126,7 +894,6 @@
                     ['hero_subtitle', config.hero_subtitle || defaultConfig.hero_subtitle],
                     ['cta_primary', config.cta_primary || defaultConfig.cta_primary],
                     ['cta_secondary', config.cta_secondary || defaultConfig.cta_secondary],
-                    ['plan_price_starter', config.plan_price_starter || defaultConfig.plan_price_starter],
                     ['plan_price_pro', config.plan_price_pro || defaultConfig.plan_price_pro],
                     ['plan_price_enterprise', config.plan_price_enterprise || defaultConfig.plan_price_enterprise]
                 ])

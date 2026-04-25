@@ -9,12 +9,13 @@ from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
 
 from base.models import Convenio, Especialidade, StatusAgendamento, TipoConsulta
-from base.statuses import get_status_agendamento_em_atendimento, get_status_agendamento_padrao
+from base.statuses import get_status_agendamento_em_andamento, get_status_agendamento_padrao
 from base.tenancy import ClinicaModuloRequiredMixin, filtrar_por_clinica, get_actor_name, modulo_requerido
 from medico.models import Medico, MedicoAgenda, MedicoEspecialidade
 from paciente.models import Paciente
 
 from .models import Agenda
+from .services import sync_agenda_status
 
 
 def _get_data_agenda(request):
@@ -97,9 +98,13 @@ class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
                 mensagem_tabela = 'NÃO FOI ABERTA AGENDA PARA ESTA DATA'
                 mostrar_btn_abrir_agenda = True
 
+        agenda_qs = list(agenda_qs)
+        actor_name = get_actor_name(self.request) if self.request.user.is_authenticated else None
         agenda_consultas = []
-        status_em_atendimento = get_status_agendamento_em_atendimento(self.request)
-        for consulta in agenda_qs:
+        status_em_andamento = get_status_agendamento_em_andamento(self.request)
+        for index, consulta in enumerate(agenda_qs):
+            next_hora = agenda_qs[index + 1].hora if index + 1 < len(agenda_qs) else None
+            sync_agenda_status(consulta, self.request, next_hora=next_hora, actor_name=actor_name)
             agenda_consultas.append(
                 {
                     'id': consulta.id,
@@ -145,7 +150,7 @@ class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
                     status=True,
                     nivel__lte=2,
                 ).order_by('nivel', 'descricao'), self.request),
-                'status_em_atendimento_id': status_em_atendimento.pk if status_em_atendimento else '',
+                'status_em_atendimento_id': status_em_andamento.pk if status_em_andamento else '',
                 'pacientes': filtrar_por_clinica(Paciente.objects.filter(status=True), self.request)
                 .select_related('convenio')
                 .order_by('nome')[:200],
@@ -325,6 +330,7 @@ def _salvar_consulta(request):
     agenda.status = Agenda.Status.AGENDADO
     agenda.usalt = get_actor_name(request)
     agenda.save()
+    sync_agenda_status(agenda, request, actor_name=get_actor_name(request))
 
     return JsonResponse({'success': True, 'message': 'Consulta salva com sucesso.'})
 

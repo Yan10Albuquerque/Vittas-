@@ -8,6 +8,7 @@ __pycache__/
 local_settings.py
 *.pot
 *.pyc
+staticfiles/
 
 # SQLite
 *.sqlite3

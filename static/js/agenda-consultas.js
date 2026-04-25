@@ -742,11 +742,6 @@ window.agendaConsultasPage = function () {
       const hora = this.query(`#horaConsulta${codAgenda}`)?.textContent.trim() || "";
       const dataAgenda = formatDateBr(this.dataAgendaInput?.value || "");
 
-      if (this.statusEmAtendimentoId && String(codStatusConsulta) === String(this.statusEmAtendimentoId)) {
-        this.showToast("warning", "Nao e possivel alterar o status de uma consulta em atendimento.");
-        return;
-      }
-
       const codAgendaStatus = this.query("#cod_agenda_status");
       const titleModalStatus = this.query("#title_modal_status");
       if (codAgendaStatus) {

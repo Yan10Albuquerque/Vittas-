@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from base.models import StatusAgendamento
+from base.statuses import DEFAULT_STATUS_AGENDAMENTO
 from usuario.models import Clinica
 
 
@@ -25,7 +26,7 @@ class StatusAgendamentoCrudTests(TestCase):
         response = self.client.post(
             reverse("base:status_agendamento_create"),
             {
-                "descricao": "Confirmado",
+                "descricao": "Reagendado",
                 "cor": "btn-success",
                 "nivel": 1,
                 "status": "on",
@@ -34,4 +35,20 @@ class StatusAgendamentoCrudTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(StatusAgendamento.objects.filter(clinica=self.clinica, descricao="Confirmado").exists())
+        self.assertTrue(StatusAgendamento.objects.filter(clinica=self.clinica, descricao="Reagendado").exists())
+
+    def test_clinica_nova_recebe_status_padrao(self):
+        clinica = Clinica.objects.create_user(
+            nome_fantasia="Clinica Seed",
+            email="seed@clinica.com",
+            password="123456",
+            plano=Clinica.Plano.BASICO,
+        )
+
+        statuses = StatusAgendamento.objects.filter(clinica=clinica).order_by("nivel", "descricao")
+
+        self.assertEqual(statuses.count(), len(DEFAULT_STATUS_AGENDAMENTO))
+        self.assertSetEqual(
+            set(statuses.values_list("descricao", flat=True)),
+            {item["descricao"] for item in DEFAULT_STATUS_AGENDAMENTO},
+        )

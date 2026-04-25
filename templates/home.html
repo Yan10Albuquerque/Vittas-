@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Home | Vittas{% endblock %}
 
@@ -24,65 +25,8 @@
           <span class="badge badge-success badge-lg">Financeiro em destaque</span>
         </div>
       </div>
-      <div class="card bg-base-100 border border-white/10">
-        <div class="card-body p-6 lg:p-8">
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <p class="text-sm text-base-content/60">Resumo da experiência</p>
-              <h2 class="text-2xl font-bold">Ambiente Vittas</h2>
-            </div>
-            <span class="badge badge-success badge-lg">97% satisfação</span>
-          </div>
-          <div class="grid grid-cols-3 gap-3 mb-5">
-            <div class="rounded-2xl bg-base-300/40 px-4 py-5 text-center">
-              <strong class="block text-3xl text-primary">248</strong>
-              <span class="text-sm text-base-content/60">Pacientes</span>
-            </div>
-            <div class="rounded-2xl bg-base-300/40 px-4 py-5 text-center">
-              <strong class="block text-3xl text-primary">32</strong>
-              <span class="text-sm text-base-content/60">Hoje</span>
-            </div>
-            <div class="rounded-2xl bg-base-300/40 px-4 py-5 text-center">
-              <strong class="block text-3xl text-primary">18%</strong>
-              <span class="text-sm text-base-content/60">Crescimento</span>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="h-24 rounded-2xl bg-gradient-to-r from-primary/15 via-success/20 to-info/10 p-4 flex items-end gap-3">
-              <div class="h-6 w-10 rounded-t-xl bg-primary/30"></div>
-              <div class="h-10 w-10 rounded-t-xl bg-primary/40"></div>
-              <div class="h-8 w-10 rounded-t-xl bg-primary/35"></div>
-              <div class="h-12 w-10 rounded-t-xl bg-primary/45"></div>
-              <div class="h-14 w-10 rounded-t-xl bg-primary/60"></div>
-              <div class="h-16 w-10 rounded-t-xl bg-primary"></div>
-            </div>
-            <div class="rounded-2xl bg-base-300/30 p-4">
-              <p class="text-sm text-base-content/60 mb-3">Próximos atendimentos</p>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between rounded-xl bg-base-100/40 px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">MC</span>
-                    <div>
-                      <p class="font-semibold">Maria Costa</p>
-                      <p class="text-sm text-base-content/60">Consulta - 09:30</p>
-                    </div>
-                  </div>
-                  <span class="h-2.5 w-2.5 rounded-full bg-success"></span>
-                </div>
-                <div class="flex items-center justify-between rounded-xl bg-base-100/40 px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-info/15 text-info font-bold">RS</span>
-                    <div>
-                      <p class="font-semibold">Roberto Silva</p>
-                      <p class="text-sm text-base-content/60">Retorno - 10:15</p>
-                    </div>
-                  </div>
-                  <span class="h-2.5 w-2.5 rounded-full bg-warning"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="flex justify-center lg:justify-center order-first lg:order-last">
+        <img src="{% static 'img/LogoVittasHero.png' %}" alt="Imagem de destaque" class="w-80 max-w-sm lg:max-w-md opacity-70 blur-[1px]">
       </div>
     </section>
 

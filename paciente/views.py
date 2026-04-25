@@ -11,9 +11,9 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from base.models import StatusAgendamento
-from base.statuses import get_status_agendamento_em_atendimento
 from base.tenancy import ClinicaModuloRequiredMixin, filtrar_por_clinica, get_actor_name, get_clinica_atual, modulo_requerido, set_clinica
 from base.services import CepLookupError, consultar_cep
+from agenda.services import sync_agenda_status
 from financeiro.services import sincronizar_lancamento_vacina
 from .forms import PacienteForm, PacienteVacinaForm
 from .models import Paciente, PacienteVacina
@@ -291,11 +291,8 @@ def _paciente_atualiza(request):
     cod_agenda = request.POST.get('cod_agenda')
     if cod_agenda:
         agenda = filtrar_por_clinica(Agenda.objects.filter(pk=cod_agenda), request).first()
-        status_atendimento = get_status_agendamento_em_atendimento(request)
-        if agenda and status_atendimento:
-            agenda.status_agendamento = status_atendimento
-            agenda.usalt = get_actor_name(request)
-            agenda.save(update_fields=['status_agendamento', 'usalt', 'dtalt'])
+        if agenda:
+            sync_agenda_status(agenda, request, actor_name=get_actor_name(request))
 
     return JsonResponse({'success': True, 'message': 'Paciente atualizado com sucesso.'})
 
