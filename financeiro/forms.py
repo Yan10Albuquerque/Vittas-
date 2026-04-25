@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from base.tenancy import get_clinica_atual
 from base.models import Convenio, FormaPagamento
@@ -49,10 +50,10 @@ class LancamentoFinanceiroForm(forms.ModelForm):
             "convenio": forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
             "nome_cliente": forms.TextInput(attrs={"class": "input input-bordered input-sm w-full"}),
             "forma_pagamento": forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
-            "data_lancamento": forms.DateInput(attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
-            "competencia": forms.DateInput(attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
-            "data_vencimento": forms.DateInput(attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
-            "data_pagamento": forms.DateInput(attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
+            "data_lancamento": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
+            "competencia": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
+            "data_vencimento": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
+            "data_pagamento": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "input input-bordered input-sm w-full"}),
             "valor": forms.NumberInput(attrs={"class": "input input-bordered input-sm w-full", "step": "0.01", "min": "0"}),
             "valor_recebido": forms.NumberInput(attrs={"class": "input input-bordered input-sm w-full", "step": "0.01", "min": "0"}),
             "status": forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
@@ -63,12 +64,29 @@ class LancamentoFinanceiroForm(forms.ModelForm):
         self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
         clinica = get_clinica_atual(self.request) if self.request else None
+        instance = getattr(self, "instance", None)
 
         if clinica:
-            self.fields["categoria"].queryset = CategoriaFinanceira.objects.filter(clinica=clinica, status=True).order_by("tipo", "descricao")
-            self.fields["paciente"].queryset = Paciente.objects.filter(clinica=clinica, status=True).order_by("nome")
-            self.fields["convenio"].queryset = Convenio.objects.filter(clinica=clinica, status=True).order_by("nome")
-            self.fields["forma_pagamento"].queryset = FormaPagamento.objects.filter(clinica=clinica, status=True).order_by("descricao")
+            categoria_qs = CategoriaFinanceira.objects.filter(clinica=clinica)
+            paciente_qs = Paciente.objects.filter(clinica=clinica)
+            convenio_qs = Convenio.objects.filter(clinica=clinica)
+            forma_pagamento_qs = FormaPagamento.objects.filter(clinica=clinica)
+
+            if instance and instance.pk:
+                categoria_qs = categoria_qs.filter(Q(status=True) | Q(pk=instance.categoria_id))
+                paciente_qs = paciente_qs.filter(Q(status=True) | Q(pk=instance.paciente_id))
+                convenio_qs = convenio_qs.filter(Q(status=True) | Q(pk=instance.convenio_id))
+                forma_pagamento_qs = forma_pagamento_qs.filter(Q(status=True) | Q(pk=instance.forma_pagamento_id))
+            else:
+                categoria_qs = categoria_qs.filter(status=True)
+                paciente_qs = paciente_qs.filter(status=True)
+                convenio_qs = convenio_qs.filter(status=True)
+                forma_pagamento_qs = forma_pagamento_qs.filter(status=True)
+
+            self.fields["categoria"].queryset = categoria_qs.order_by("tipo", "descricao").distinct()
+            self.fields["paciente"].queryset = paciente_qs.order_by("nome").distinct()
+            self.fields["convenio"].queryset = convenio_qs.order_by("nome").distinct()
+            self.fields["forma_pagamento"].queryset = forma_pagamento_qs.order_by("descricao").distinct()
 
         self.fields["paciente"].required = False
         self.fields["convenio"].required = False
@@ -76,6 +94,10 @@ class LancamentoFinanceiroForm(forms.ModelForm):
         self.fields["forma_pagamento"].required = False
         self.fields["data_pagamento"].required = False
         self.fields["valor_recebido"].required = False
+        self.fields["data_lancamento"].input_formats = ["%Y-%m-%d"]
+        self.fields["competencia"].input_formats = ["%Y-%m-%d"]
+        self.fields["data_vencimento"].input_formats = ["%Y-%m-%d"]
+        self.fields["data_pagamento"].input_formats = ["%Y-%m-%d"]
 
     def clean(self):
         cleaned_data = super().clean()

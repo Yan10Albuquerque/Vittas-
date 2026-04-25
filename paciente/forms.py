@@ -46,6 +46,7 @@ class PacienteForm(forms.ModelForm):
             'telefone': forms.TextInput(attrs={'class': 'input input-bordered input-sm w-full', 'data-mask': '(00) 0000-0000'}),
             'email': forms.EmailInput(attrs={'class': 'input input-bordered input-sm w-full'}),
             'obs': forms.Textarea(attrs={'class': 'textarea textarea-bordered textarea-sm w-full', 'rows': 3}),
+            'prontuario': forms.Textarea(attrs={'class': 'textarea textarea-bordered w-full min-h-48', 'rows': 10}),
             'sexo': forms.Select(choices=[('M', 'MASCULINO'), ('F', 'FEMININO'), ('O', 'OUTRO')], attrs={'class': 'select select-bordered select-sm w-full'}),
             'estado': forms.Select(choices=ESTADOS_BRASIL, attrs={'class': 'select select-bordered select-sm w-full'}),
             'convenio': forms.Select(attrs={'class': 'select select-bordered select-sm w-full'}),

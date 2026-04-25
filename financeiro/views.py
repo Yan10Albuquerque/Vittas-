@@ -41,6 +41,11 @@ def _somar(queryset, campo):
     )["total"]
 
 
+def _redirect_back(request, fallback):
+    destino = request.POST.get("next") or request.GET.get("next")
+    return redirect(destino or fallback)
+
+
 class FinanceiroDashboardView(ClinicaModuloRequiredMixin, TemplateView):
     template_name = "financeiro/dashboard.html"
     modulo_requerido = "financeiro"
@@ -216,15 +221,34 @@ def baixar_lancamento(request, pk):
         filtrar_por_clinica(LancamentoFinanceiro.objects.all(), request),
         pk=pk,
     )
-    valor_pago = request.POST.get("valor_pago") or lancamento.valor
+    valor_informado = request.POST.get("valor_pago") or str(lancamento.valor_em_aberto or lancamento.valor)
     data_pagamento = request.POST.get("data_pagamento") or timezone.localdate().isoformat()
 
-    lancamento.valor_recebido = valor_pago
+    try:
+        valor_pago = Decimal(str(valor_informado).replace(",", "."))
+    except Exception:
+        messages.error(request, "Informe um valor de pagamento válido.")
+        return _redirect_back(request, "financeiro:lancamento_list")
+
+    if valor_pago <= 0:
+        messages.error(request, "O valor do pagamento deve ser maior que zero.")
+        return _redirect_back(request, "financeiro:lancamento_list")
+
+    total_recebido = (lancamento.valor_recebido or Decimal("0.00")) + valor_pago
+    if total_recebido > lancamento.valor:
+        messages.error(request, "O pagamento informado excede o valor total do lançamento.")
+        return _redirect_back(request, "financeiro:lancamento_list")
+
+    lancamento.valor_recebido = total_recebido
     lancamento.data_pagamento = data_pagamento
     lancamento.usalt = get_actor_name(request)
     lancamento.save()
-    messages.success(request, "Lançamento baixado com sucesso.")
-    return redirect("financeiro:lancamento_list")
+
+    if lancamento.status == LancamentoFinanceiro.Status.PAGO:
+        messages.success(request, "Lançamento baixado com sucesso.")
+    else:
+        messages.success(request, "Pagamento parcial registrado com sucesso.")
+    return _redirect_back(request, "financeiro:lancamento_list")
 
 
 @login_required
@@ -235,11 +259,15 @@ def cancelar_lancamento(request, pk):
         filtrar_por_clinica(LancamentoFinanceiro.objects.all(), request),
         pk=pk,
     )
+    if lancamento.status == LancamentoFinanceiro.Status.PAGO:
+        messages.error(request, "Lançamentos pagos não podem ser cancelados.")
+        return _redirect_back(request, "financeiro:lancamento_list")
+
     lancamento.status = LancamentoFinanceiro.Status.CANCELADO
     lancamento.usalt = get_actor_name(request)
     lancamento.save(update_fields=["status", "usalt", "dtalt"])
     messages.success(request, "Lançamento cancelado com sucesso.")
-    return redirect("financeiro:lancamento_list")
+    return _redirect_back(request, "financeiro:lancamento_list")
 
 
 def vendas (request):

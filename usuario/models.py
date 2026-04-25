@@ -42,7 +42,7 @@ class Clinica(AbstractBaseUser, PermissionsMixin):
     class Plano(models.TextChoices):
         BASICO = "BASICO", "Básico"
         PROFISSIONAL = "PROFISSIONAL", "Profissional"
-        PRO = "PRO", "Pro"
+        ENTERPRISE = "ENTERPRISE", "Enterprise"
 
     MODULOS_POR_PLANO = {
         Plano.BASICO: {
@@ -50,16 +50,17 @@ class Clinica(AbstractBaseUser, PermissionsMixin):
             "agenda",
             "cadastros",
             "configuracoes",
+            "enfermagem",
+            "financeiro",
         },
         Plano.PROFISSIONAL: {
             "pacientes",
             "agenda",
             "cadastros",
             "configuracoes",
-            "enfermagem",
             "financeiro",
         },
-        Plano.PRO: {
+        Plano.ENTERPRISE: {
             "pacientes",
             "agenda",
             "cadastros",
@@ -129,5 +130,11 @@ class Clinica(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.nome_fantasia
 
+    @property
+    def plano_normalizado(self):
+        if self.plano == "PRO":
+            return self.Plano.ENTERPRISE
+        return self.plano
+
     def modulo_disponivel(self, modulo):
-        return modulo in self.MODULOS_POR_PLANO.get(self.plano, set())
+        return modulo in self.MODULOS_POR_PLANO.get(self.plano_normalizado, set())

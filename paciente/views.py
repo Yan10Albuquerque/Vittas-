@@ -5,18 +5,122 @@ from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from base.models import StatusAgendamento
 from base.tenancy import ClinicaModuloRequiredMixin, filtrar_por_clinica, get_actor_name, get_clinica_atual, modulo_requerido, set_clinica
 from base.services import CepLookupError, consultar_cep
 from agenda.services import sync_agenda_status
-from financeiro.services import sincronizar_lancamento_vacina
-from .forms import PacienteForm, PacienteVacinaForm
-from .models import Paciente, PacienteVacina
+from .forms import PacienteForm
+from .models import Paciente
+
+
+def _as_local_datetime(value):
+    if value is None:
+        return None
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value, timezone.get_current_timezone())
+    return timezone.localtime(value)
+
+
+def _build_prontuario_timeline(paciente):
+    eventos = []
+
+    for agendamento in paciente.agendamentos.select_related(
+        'medico',
+        'tipo_consulta',
+        'especialidade',
+        'status_agendamento',
+    ):
+        instante = _as_local_datetime(timezone.datetime.combine(agendamento.data, agendamento.hora))
+        detalhes = list(
+            filter(
+                None,
+                [
+                    f"Médico: {agendamento.medico.nome}" if agendamento.medico_id else None,
+                    f"Tipo: {agendamento.tipo_consulta.descricao}" if agendamento.tipo_consulta_id else None,
+                    f"Especialidade: {agendamento.especialidade.descricao}" if agendamento.especialidade_id else None,
+                    f"Status: {agendamento.status_agendamento.descricao}" if agendamento.status_agendamento_id else None,
+                ],
+            )
+        )
+        eventos.append(
+            {
+                'tipo': 'Consulta',
+                'titulo': 'Atendimento agendado',
+                'instante': instante,
+                'descricao': " | ".join(detalhes) or 'Agendamento vinculado ao paciente.',
+            }
+        )
+
+    for vacina in paciente.vacinas.select_related('aplicador', 'forma_pagamento'):
+        instante_base = timezone.datetime.combine(vacina.data_aplicacao, timezone.datetime.min.time()) if vacina.data_aplicacao else vacina.dtcad
+        instante = _as_local_datetime(instante_base)
+        detalhes = list(
+            filter(
+                None,
+                [
+                    f"Aplicador: {vacina.aplicador}" if vacina.aplicador_id else None,
+                    f"Pagamento: {vacina.forma_pagamento}" if vacina.forma_pagamento_id else None,
+                    f"Observação: {vacina.obs}" if vacina.obs else None,
+                ],
+            )
+        )
+        eventos.append(
+            {
+                'tipo': 'Vacina',
+                'titulo': vacina.descricao_vacina or 'Vacina registrada',
+                'instante': instante,
+                'descricao': " | ".join(detalhes) or 'Aplicação registrada no histórico do paciente.',
+            }
+        )
+
+    for lancamento in paciente.lancamentos_financeiros.select_related('categoria', 'forma_pagamento'):
+        instante_base = timezone.datetime.combine(lancamento.data_lancamento, timezone.datetime.min.time())
+        instante = _as_local_datetime(instante_base)
+        detalhes = list(
+            filter(
+                None,
+                [
+                    f"Categoria: {lancamento.categoria.descricao}" if lancamento.categoria_id else None,
+                    f"Origem: {lancamento.get_origem_display()}",
+                    f"Status: {lancamento.get_status_display()}",
+                    f"Forma de pagamento: {lancamento.forma_pagamento}" if lancamento.forma_pagamento_id else None,
+                ],
+            )
+        )
+        eventos.append(
+            {
+                'tipo': 'Financeiro',
+                'titulo': lancamento.descricao,
+                'instante': instante,
+                'descricao': " | ".join(detalhes) or 'Lançamento financeiro associado ao paciente.',
+                'valor': lancamento.valor,
+            }
+        )
+
+    for historico in paciente.history.all():
+        if historico.history_type == '+':
+            titulo = 'Cadastro do paciente'
+        elif historico.history_type == '~':
+            titulo = 'Dados cadastrais atualizados'
+        else:
+            titulo = 'Registro do paciente removido'
+
+        eventos.append(
+            {
+                'tipo': 'Cadastro',
+                'titulo': titulo,
+                'instante': _as_local_datetime(historico.history_date),
+                'descricao': f"Responsável: {historico.history_user or historico.history_change_reason or 'Sistema'}",
+            }
+        )
+
+    eventos.sort(key=lambda evento: evento['instante'] or timezone.now(), reverse=True)
+    return eventos
 
 
 class PacienteListView(ClinicaModuloRequiredMixin, ListView):
@@ -70,45 +174,18 @@ class PacienteUpdateView(ClinicaModuloRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['vacina_form'] = kwargs.get('vacina_form', PacienteVacinaForm(request=self.request))
-        context['vacinas'] = self.object.vacinas.select_related('aplicador', 'forma_pagamento').order_by('-data_aplicacao', '-dtcad')
         context['active_tab'] = kwargs.get('active_tab', self.request.GET.get('tab', 'cadastro'))
-        context['vacina_id_edicao'] = kwargs.get('vacina_id_edicao', '')
+        context['timeline_eventos'] = _build_prontuario_timeline(self.object)
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
 
-        if 'salvar_vacina' in request.POST:
-            vacina_id = request.POST.get('vacina_id')
-            vacina_instance = None
-
-            if vacina_id:
-                vacina_instance = get_object_or_404(
-                    filtrar_por_clinica(PacienteVacina.objects.filter(paciente=self.object), request),
-                    pk=vacina_id,
-                )
-
-            vacina_form = PacienteVacinaForm(request.POST, instance=vacina_instance, request=request)
-            if vacina_form.is_valid():
-                vacina = vacina_form.save(commit=False)
-                set_clinica(vacina, request)
-                if vacina_instance:
-                    vacina.usalt = get_actor_name(request)
-                else:
-                    vacina.paciente = self.object
-                    vacina.uscad = get_actor_name(request)
-                vacina.save()
-                sincronizar_lancamento_vacina(vacina)
-                return redirect(f"{request.path}?tab=vacinas")
-
-            context = self.get_context_data(
-                form=self.get_form(),
-                vacina_form=vacina_form,
-                active_tab='vacinas',
-                vacina_id_edicao=vacina_id or '',
-            )
-            return self.render_to_response(context)
+        if 'salvar_prontuario' in request.POST:
+            self.object.prontuario = (request.POST.get('prontuario') or '').strip()
+            self.object.usalt = get_actor_name(request)
+            self.object.save(update_fields=['prontuario', 'usalt', 'dtalt'])
+            return redirect(f"{request.path}?tab=prontuario")
 
         return super().post(request, *args, **kwargs)
 
@@ -192,6 +269,7 @@ def _paciente_buscar_dados(request):
                 'num_carteira': paciente.carteira_conv or '',
                 'carteira_sus': paciente.carteira_sus or '',
                 'obs': paciente.obs or '',
+                'prontuario': paciente.prontuario or '',
             },
         }
     )
@@ -285,6 +363,8 @@ def _paciente_atualiza(request):
     paciente.carteira_conv = (request.POST.get('num_carteira') or '').strip() or None
     paciente.carteira_sus = (request.POST.get('carteira_sus') or '').strip() or None
     paciente.obs = (request.POST.get('obs') or '').strip() or None
+    if 'prontuario' in request.POST:
+        paciente.prontuario = (request.POST.get('prontuario') or '').strip()
     paciente.usalt = get_actor_name(request)
     paciente.save()
 

@@ -82,19 +82,30 @@
             </td>
             <td>{{ lancamento.categoria.descricao }}</td>
             <td>{{ lancamento.data_vencimento|date:"d/m/Y" }}</td>
-            <td><span class="badge badge-sm">{{ lancamento.get_status_display }}</span></td>
+            <td><span class="badge badge-sm {{ lancamento.status_badge_class }}">{{ lancamento.status_badge_label }}</span></td>
             <td>R$ {{ lancamento.valor|floatformat:2 }}</td>
             <td class="text-right">
               <div class="flex justify-end gap-2">
                 <a href="{% url 'financeiro:lancamento_update' lancamento.pk %}" class="btn btn-ghost btn-xs">Editar</a>
                 {% if lancamento.status != 'PAGO' and lancamento.status != 'CANCELADO' %}
-                  <form method="post" action="{% url 'financeiro:lancamento_baixar' lancamento.pk %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="valor_pago" value="{{ lancamento.valor }}">
-                    <button type="submit" class="btn btn-success btn-xs">Baixar</button>
-                  </form>
+                  <button
+                    type="button"
+                    class="btn {% if lancamento.status == 'ATRASADO' %}btn-warning{% else %}btn-success{% endif %} btn-xs"
+                    onclick="abrirModalBaixa(this)"
+                    data-url="{% url 'financeiro:lancamento_baixar' lancamento.pk %}"
+                    data-next="{{ request.get_full_path }}"
+                    data-descricao="{{ lancamento.descricao|escape }}"
+                    data-cliente="{{ lancamento.cliente_display|escape }}"
+                    data-status="{{ lancamento.status_badge_label }}"
+                    data-valor-total="{{ lancamento.valor }}"
+                    data-valor-aberto="{{ lancamento.valor_em_aberto }}"
+                    data-data-pagamento="{% now 'Y-m-d' %}"
+                  >
+                    {% if lancamento.status == 'ATRASADO' %}Receber{% else %}Baixar{% endif %}
+                  </button>
                   <form method="post" action="{% url 'financeiro:lancamento_cancelar' lancamento.pk %}">
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <button type="submit" class="btn btn-error btn-xs">Cancelar</button>
                   </form>
                 {% endif %}
@@ -126,4 +137,96 @@
     </div>
   {% endif %}
 </div>
+
+<dialog id="modal_baixa_lancamento" class="modal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <div>
+        <h3 class="font-bold text-lg">Receber lançamento</h3>
+        <p class="text-sm text-base-content/60" id="baixa_resumo"></p>
+      </div>
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm btn-circle" type="submit">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </form>
+    </div>
+
+    <form method="post" id="form_baixa_lancamento" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="next" id="baixa_next">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="label"><span class="label-text">Valor em aberto</span></label>
+          <input type="text" id="baixa_valor_aberto_display" class="input input-bordered input-sm w-full bg-base-200" readonly>
+        </div>
+        <div>
+          <label class="label"><span class="label-text">Status atual</span></label>
+          <input type="text" id="baixa_status_display" class="input input-bordered input-sm w-full bg-base-200" readonly>
+        </div>
+        <div>
+          <label class="label"><span class="label-text">Valor recebido agora</span></label>
+          <input type="number" name="valor_pago" id="baixa_valor_pago" class="input input-bordered input-sm w-full" step="0.01" min="0.01" required>
+        </div>
+        <div>
+          <label class="label"><span class="label-text">Data do pagamento</span></label>
+          <input type="date" name="data_pagamento" id="baixa_data_pagamento" class="input input-bordered input-sm w-full" required>
+        </div>
+      </div>
+
+      <div class="modal-action">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('modal_baixa_lancamento').close()">Fechar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Confirmar recebimento</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function normalizarValorFinanceiro(valor) {
+    const texto = String(valor ?? '').trim();
+    if (!texto) {
+      return 0;
+    }
+
+    if (texto.includes(',')) {
+      return Number(texto.replace(/\./g, '').replace(',', '.'));
+    }
+
+    return Number(texto);
+  }
+
+  function formatarValorFinanceiro(valor) {
+    const numero = normalizarValorFinanceiro(valor);
+    if (Number.isNaN(numero)) {
+      return '0,00';
+    }
+    return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function abrirModalBaixa(button) {
+    const modal = document.getElementById('modal_baixa_lancamento');
+    const form = document.getElementById('form_baixa_lancamento');
+    if (!modal || !form) {
+      return;
+    }
+
+    form.action = button.dataset.url;
+    document.getElementById('baixa_next').value = button.dataset.next || '';
+    document.getElementById('baixa_resumo').textContent = `${button.dataset.cliente || 'Cliente'} - ${button.dataset.descricao || 'Lançamento'}`;
+    document.getElementById('baixa_status_display').value = button.dataset.status || '';
+    const valorAberto = normalizarValorFinanceiro(button.dataset.valorAberto);
+    const valorTotal = normalizarValorFinanceiro(button.dataset.valorTotal);
+    const valorInicial = valorAberto > 0 ? valorAberto : valorTotal;
+
+    document.getElementById('baixa_valor_aberto_display').value = `R$ ${formatarValorFinanceiro(valorAberto)}`;
+    document.getElementById('baixa_valor_pago').value = valorInicial ? valorInicial.toFixed(2) : '';
+    document.getElementById('baixa_data_pagamento').value = button.dataset.dataPagamento || '';
+
+    modal.showModal();
+  }
+</script>
 {% endblock %}

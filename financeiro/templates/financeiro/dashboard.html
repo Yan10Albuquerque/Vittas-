@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Financeiro{% endblock %}
+{% block title %}Financeiro | Vittas{% endblock %}
 
 {% block content %}
 <div class="flex flex-col gap-6">
@@ -110,7 +110,7 @@
                 <tr>
                   <td>{{ item.get_tipo_display }}</td>
                   <td>{{ item.cliente_display }}</td>
-                  <td><span class="badge badge-sm">{{ item.get_status_display }}</span></td>
+                  <td><span class="badge badge-sm {{ item.status_badge_class }}">{{ item.status_badge_label }}</span></td>
                   <td>R$ {{ item.valor|floatformat:2 }}</td>
                 </tr>
               {% empty %}

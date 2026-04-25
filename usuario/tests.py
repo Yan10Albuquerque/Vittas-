@@ -90,3 +90,45 @@ class ClinicaAuthFlowTests(TestCase):
 
         self.assertEqual(home_response.status_code, 200)
         self.assertEqual(perfil_response.status_code, 200)
+
+    def test_plano_basico_libera_todos_os_modulos(self):
+        clinica = Clinica.objects.create_user(
+            nome_fantasia="Clinica Basica",
+            email="basica@clinica.com",
+            password="Senha@123",
+            plano=Clinica.Plano.BASICO,
+        )
+
+        self.assertTrue(clinica.modulo_disponivel("pacientes"))
+        self.assertTrue(clinica.modulo_disponivel("agenda"))
+        self.assertTrue(clinica.modulo_disponivel("cadastros"))
+        self.assertTrue(clinica.modulo_disponivel("configuracoes"))
+        self.assertTrue(clinica.modulo_disponivel("financeiro"))
+        self.assertTrue(clinica.modulo_disponivel("enfermagem"))
+
+    def test_plano_profissional_nao_libera_enfermagem(self):
+        clinica = Clinica.objects.create_user(
+            nome_fantasia="Clinica Profissional",
+            email="profissional@clinica.com",
+            password="Senha@123",
+            plano=Clinica.Plano.PROFISSIONAL,
+        )
+
+        self.assertTrue(clinica.modulo_disponivel("pacientes"))
+        self.assertTrue(clinica.modulo_disponivel("agenda"))
+        self.assertTrue(clinica.modulo_disponivel("cadastros"))
+        self.assertTrue(clinica.modulo_disponivel("configuracoes"))
+        self.assertTrue(clinica.modulo_disponivel("financeiro"))
+        self.assertFalse(clinica.modulo_disponivel("enfermagem"))
+
+    def test_plano_pro_legado_equivale_a_enterprise(self):
+        clinica = Clinica.objects.create_user(
+            nome_fantasia="Clinica Legada",
+            email="legada@clinica.com",
+            password="Senha@123",
+            plano="PRO",
+        )
+
+        self.assertEqual(clinica.plano_normalizado, Clinica.Plano.ENTERPRISE)
+        self.assertTrue(clinica.modulo_disponivel("enfermagem"))
+        self.assertTrue(clinica.modulo_disponivel("financeiro"))

@@ -98,8 +98,8 @@
         <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-64 z-[1]">
           <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">{{ request.user.email }}</li>
           {% if clinica_atual %}
-          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">{{ clinica_atual.nome_fantasia
-            }} • {{ clinica_atual.get_plano_display }}</li>
+          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">Tipo de Plano • {{
+            clinica_atual.get_plano_display }}</li>
           {% endif %}
           <li class="h-px bg-base-300 my-1"></li>
           <li><a href="#" onclick="document.getElementById('modal_perfil').classList.add('modal-open')"><i

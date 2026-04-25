@@ -157,6 +157,21 @@ class LancamentoFinanceiro(models.Model):
         return f"{self.descricao} - {self.valor}"
 
     @property
+    def status_badge_class(self):
+        mapa = {
+            self.Status.PENDENTE: "badge-ghost text-base-content",
+            self.Status.PAGO: "badge-success text-success-content",
+            self.Status.ATRASADO: "badge-error text-error-content",
+            self.Status.CANCELADO: "badge-neutral text-neutral-content",
+            self.Status.PARCIAL: "badge-warning text-warning-content",
+        }
+        return mapa.get(self.status, "badge-ghost")
+
+    @property
+    def status_badge_label(self):
+        return self.get_status_display()
+
+    @property
     def cliente_display(self):
         if self.paciente_id and self.paciente:
             return self.paciente.nome
