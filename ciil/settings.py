@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,6 +25,39 @@ def env_bool(name, default=False):
 def env_list(name, default=""):
     raw_value = os.getenv(name, default)
     return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
+def get_postgres_database_config():
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    if database_url:
+        parsed = urlparse(database_url)
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path.lstrip("/"),
+            "USER": parsed.username,
+            "PASSWORD": parsed.password,
+            "HOST": parsed.hostname,
+            "PORT": str(parsed.port or "5432"),
+            "OPTIONS": {
+                "sslmode": os.getenv("DB_SSLMODE", "require"),
+            },
+        }
+
+    host = os.getenv("PGHOST") or os.getenv("POSTGRES_HOST") or os.getenv("DB_HOST")
+    if not host:
+        return None
+
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("PGDATABASE") or os.getenv("POSTGRES_DB") or os.getenv("DB_NAME"),
+        "USER": os.getenv("PGUSER") or os.getenv("POSTGRES_USER") or os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("PGPASSWORD") or os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD"),
+        "HOST": host,
+        "PORT": os.getenv("PGPORT") or os.getenv("POSTGRES_PORT") or os.getenv("DB_PORT") or "5432",
+        "OPTIONS": {
+            "sslmode": os.getenv("DB_SSLMODE", "require"),
+        },
+    }
 
 
 # Quick-start development settings - unsuitable for production
@@ -111,21 +145,12 @@ WSGI_APPLICATION = "ciil.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-db_engine = os.getenv("DB_ENGINE", "sqlite").lower()
+db_engine = os.getenv("DB_ENGINE", "").lower()
+postgres_database = get_postgres_database_config()
 
-if db_engine == "mysql":
+if db_engine in {"postgres", "postgresql"} or postgres_database:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "postgres",  # Database name do Supabase
-            "USER": "postgres.iryvngxlarvnrqdmnyqt",  # Usuário
-            "PASSWORD": "WVdxT8SjrxWvQknD",
-            "HOST": "aws-1-sa-east-1.pooler.supabase.com",
-            "PORT": "6543",
-            "OPTIONS": {
-                "sslmode": "require",  # obrigatório no Render
-            },
-        }
+        "default": postgres_database,
     }
 else:
     DATABASES = {
