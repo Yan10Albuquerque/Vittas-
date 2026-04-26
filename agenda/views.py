@@ -418,7 +418,7 @@ def _salvar_consulta(request):
             request,
         ).first()
     if not status_agendamento:
-        status_agendamento = _get_status_agendamento_padrao(request)
+        status_agendamento = get_status_agendamento_padrao(request)
 
     agenda.paciente = paciente
     agenda.convenio_id = request.POST.get('convenio_consulta') or paciente.convenio_id
