@@ -19,6 +19,11 @@ from .models import Clinica, Colaborador
 class LoginView(TemplateView):
     template_name = "login.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if getattr(request, "user", None) and request.user.is_authenticated:
+            return redirect("usuario:home")
+        return super().dispatch(request, *args, **kwargs)
+
 
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = "home.html"

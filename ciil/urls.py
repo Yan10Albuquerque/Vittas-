@@ -1,9 +1,17 @@
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import include, path
-from django.views.generic import RedirectView
+from django.views import View
+
+
+class RootRedirectView(View):
+    def get(self, request, *args, **kwargs):
+        if getattr(request, "user", None) and request.user.is_authenticated:
+            return redirect("usuario:home")
+        return redirect("usuario:login")
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/login/', permanent=False)),
+    path('', RootRedirectView.as_view()),
     path('admin/', admin.site.urls),
     path('', include('usuario.urls')),
     path('agenda/', include('agenda.urls')),
