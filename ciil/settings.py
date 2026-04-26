@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in {"1", "true", "yes", "on"}
+DEBUG = False
 
 
 ALLOWED_HOSTS = ["127.0.0.1", "vittas.onrender.com"]
