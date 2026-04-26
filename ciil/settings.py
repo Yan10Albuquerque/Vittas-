@@ -21,6 +21,11 @@ def env_bool(name, default=False):
     return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def env_list(name, default=""):
+    raw_value = os.getenv(name, default)
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -39,14 +44,16 @@ SECRET_KEY = os.getenv(
 DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
 
-ALLOWED_HOSTS = ["127.0.0.1", "vittas.onrender.com"]
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    default="127.0.0.1,localhost,.onrender.com",
+)
 
 
-CSRF_TRUSTED_ORIGINS = [
-    o.strip()
-    for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
-    if o.strip()
-]
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default="https://*.onrender.com",
+)
 
 
 # Application definition
@@ -186,10 +193,13 @@ STORAGES = {
 
 WHITENOISE_MAX_AGE = int(os.getenv("WHITENOISE_MAX_AGE", "31536000"))
 WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 
 if DEBUG:
     WHITENOISE_AUTOREFRESH = True
     WHITENOISE_USE_FINDERS = True
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
