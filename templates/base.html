@@ -14,8 +14,8 @@
     <link rel="stylesheet" href="{% static 'css/winter.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
-    
-    
+    <style>[x-cloak]{display:none !important;}</style>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="{% static 'js/toast-manager.js' %}"></script>
@@ -23,9 +23,10 @@
   </head>
   <body class="min-h-screen bg-base-200 text-base-content">
     {% include "menu.html" %}
-    <main class="pt-20 px-4 py-10">
+    <main class="px-3 pb-10 pt-24 sm:px-4 lg:px-6">
+      <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
       {% if messages %}
-        <div class="mb-4 flex flex-col gap-2">
+        <div class="flex flex-col gap-2">
           {% for message in messages %}
             <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
               <span>{{ message }}</span>
@@ -34,6 +35,7 @@
         </div>
       {% endif %}
       {% block content %}{% endblock %}
+      </div>
     </main>
     
     <!-- Toast e Dialog globais - disponíveis em todas as páginas -->

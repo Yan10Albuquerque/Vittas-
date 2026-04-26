@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto">
-  <div class="flex items-center justify-between border-b border-base-300 pb-3 mb-6">
-    <h1 class="text-2xl font-semibold">
+  <div class="vittas-page-header">
+    <h1 class="page-title text-3xl font-semibold">
       <i class="fa-solid fa-tags mr-2"></i>
       {% if object %}Editar Categoria{% else %}Nova Categoria{% endif %}
     </h1>
@@ -14,7 +14,7 @@
     </a>
   </div>
 
-  <form method="post" class="card bg-base-100 shadow">
+  <form method="post" class="card bg-base-100 shadow border border-white/10">
     {% csrf_token %}
     <div class="card-body">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -32,7 +32,10 @@
         </div>
         <div class="form-control">
           <label class="label"><span class="label-text">Status</span></label>
-          {{ form.status }}
+          <label class="label cursor-pointer justify-start gap-3 rounded-xl border border-base-300 bg-base-200 px-4 py-3">
+            {{ form.status }}
+            <span class="label-text">Categoria disponível para uso</span>
+          </label>
         </div>
       </div>
     </div>

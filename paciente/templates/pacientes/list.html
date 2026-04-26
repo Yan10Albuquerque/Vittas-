@@ -15,14 +15,14 @@
 
   <!-- Filtro -->
   <div class="bg-base-100 p-4 rounded-[1.5rem] shadow border border-white/10">
-    <form method="get" class="flex gap-2">
+    <form method="get" class="flex flex-col gap-2 md:flex-row">
       <input type="text" name="busca" value="{{ request.GET.busca }}" 
-        placeholder="Buscar por nome, CPF ou carteira..." class="input input-bordered input-sm w-full max-w-xs" />
-      <button type="submit" class="btn btn-ghost btn-sm">
+        placeholder="Buscar por nome, CPF ou carteira..." class="input input-bordered input-sm w-full md:max-w-xs" />
+      <button type="submit" class="btn btn-ghost btn-sm md:w-auto">
         <i class="fas fa-search"></i> Buscar
       </button>
       {% if request.GET.busca %}
-      <a href="{% url 'paciente:paciente_list' %}" class="btn btn-ghost btn-sm text-error">Limpar</a>
+      <a href="{% url 'paciente:paciente_list' %}" class="btn btn-ghost btn-sm text-error md:w-auto">Limpar</a>
       {% endif %}
     </form>
   </div>
@@ -49,10 +49,12 @@
             <td class="text-center">{{ paciente.cpf }}</td>
             <td class="text-center">{{ paciente.celular }}</td>
             <td class="text-center">{{ paciente.convenio.nome|default:"Particular" }}</td>
-            <td class="flex gap-2 text-center justify-center">
-              <a href="{% url 'paciente:paciente_update' paciente.pk %}" class="btn btn-sm btn-ghost" title="Editar">
-                <i class="fas fa-edit"></i> Editar
-              </a>
+            <td class="text-center">
+              <div class="flex justify-center gap-2">
+                <a href="{% url 'paciente:paciente_update' paciente.pk %}" class="btn btn-sm btn-ghost" title="Editar">
+                  <i class="fas fa-edit"></i> Editar
+                </a>
+              </div>
             </td>
           </tr>
           {% empty %}

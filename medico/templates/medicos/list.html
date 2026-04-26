@@ -14,13 +14,13 @@
   </div>
 
   <div class="bg-base-100 p-4 rounded-[1.5rem] shadow border border-white/10">
-    <form method="get" class="flex gap-2">
+    <form method="get" class="flex flex-col gap-2 md:flex-row">
       <input
         type="text"
         name="busca"
         value="{{ request.GET.busca }}"
         placeholder="Buscar por nome, CRM ou CPF..."
-        class="input input-bordered input-sm w-full max-w-md"
+        class="input input-bordered input-sm w-full md:max-w-md"
       />
       <button type="submit" class="btn btn-ghost btn-sm">
         <i class="fas fa-search"></i> Buscar

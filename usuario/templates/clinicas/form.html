@@ -70,7 +70,10 @@
           {% if form.status %}
             <div class="form-control col-span-12 md:col-span-3">
               <label class="label"><span class="label-text">Status</span></label>
-              {{ form.status }}
+              <label class="label cursor-pointer justify-start gap-3 rounded-xl border border-base-300 bg-base-200 px-4 py-3">
+                {{ form.status }}
+                <span class="label-text">Clínica ativa para acesso</span>
+              </label>
               {{ form.status.errors }}
             </div>
           {% endif %}
@@ -78,7 +81,10 @@
           {% if form.reseta_senha %}
             <div class="form-control col-span-12 md:col-span-4">
               <label class="label"><span class="label-text">Redefinir senha no próximo login</span></label>
-              {{ form.reseta_senha }}
+              <label class="label cursor-pointer justify-start gap-3 rounded-xl border border-base-300 bg-base-200 px-4 py-3">
+                {{ form.reseta_senha }}
+                <span class="label-text">Exigir nova senha ao entrar</span>
+              </label>
               {{ form.reseta_senha.errors }}
             </div>
           {% endif %}

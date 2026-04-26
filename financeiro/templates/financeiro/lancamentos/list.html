@@ -6,7 +6,7 @@
 <div class="flex flex-col gap-4">
   <div class="vittas-page-header flex-col md:flex-row md:items-center md:justify-between">
     <h1 class="page-title text-3xl font-bold"><i class="fa-solid fa-wallet mr-2"></i>Lançamentos Financeiros</h1>
-    <div class="flex gap-2">
+    <div class="flex flex-col gap-2 sm:flex-row">
       <a href="{% url 'financeiro:categoria_list' %}" class="btn btn-ghost btn-sm">Categorias</a>
       <a href="{% url 'financeiro:lancamento_create' %}" class="btn btn-primary btn-sm">
         <i class="fa-solid fa-plus"></i> Novo Lançamento
@@ -50,7 +50,7 @@
           <option value="{{ categoria.pk }}" {% if request.GET.categoria == categoria.pk|stringformat:'s' %}selected{% endif %}>{{ categoria.descricao }}</option>
         {% endfor %}
       </select>
-      <div class="flex gap-2">
+      <div class="flex gap-2 md:col-span-5 lg:col-span-1">
         <button type="submit" class="btn btn-primary btn-sm w-full">Filtrar</button>
         <a href="{% url 'financeiro:lancamento_list' %}" class="btn btn-ghost btn-sm">Limpar</a>
       </div>
@@ -124,13 +124,13 @@
   {% if is_paginated %}
     <div class="join justify-center mt-4">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">«</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}" class="join-item btn btn-sm">«</a>
       {% else %}
         <button class="join-item btn btn-sm btn-disabled">«</button>
       {% endif %}
       <button class="join-item btn btn-sm">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</button>
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">»</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}" class="join-item btn btn-sm">»</a>
       {% else %}
         <button class="join-item btn btn-sm btn-disabled">»</button>
       {% endif %}

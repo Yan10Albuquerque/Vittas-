@@ -4,22 +4,22 @@
 
 {% block content %}
 <div class="flex flex-col gap-4">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold"><i class="fa-solid fa-tags mr-2"></i>Categorias Financeiras</h1>
+  <div class="vittas-page-header flex-col md:flex-row md:items-center md:justify-between">
+    <h1 class="page-title text-3xl font-bold"><i class="fa-solid fa-tags mr-2"></i>Categorias Financeiras</h1>
     <a href="{% url 'financeiro:categoria_create' %}" class="btn btn-primary btn-sm">
       <i class="fa-solid fa-plus"></i> Nova Categoria
     </a>
   </div>
 
-  <div class="bg-base-100 p-4 rounded-box shadow">
-    <form method="get" class="flex gap-2">
-      <input type="text" name="busca" value="{{ request.GET.busca }}" placeholder="Buscar categoria" class="input input-bordered input-sm w-full max-w-sm">
+  <div class="bg-base-100 p-4 rounded-box shadow border border-white/10">
+    <form method="get" class="flex flex-col gap-2 md:flex-row">
+      <input type="text" name="busca" value="{{ request.GET.busca }}" placeholder="Buscar categoria" class="input input-bordered input-sm w-full md:max-w-sm">
       <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
       <a href="{% url 'financeiro:categoria_list' %}" class="btn btn-ghost btn-sm">Limpar</a>
     </form>
   </div>
 
-  <div class="overflow-x-auto bg-base-100 rounded-box shadow">
+  <div class="overflow-x-auto bg-base-100 rounded-box shadow border border-white/10">
     <table class="table table-zebra table-sm">
       <thead>
         <tr>
