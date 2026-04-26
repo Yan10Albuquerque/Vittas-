@@ -17,6 +17,10 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -32,7 +36,7 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
 
 ALLOWED_HOSTS = ["127.0.0.1", "vittas.onrender.com"]
@@ -162,12 +166,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
-
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
+STATIC_HOST = os.getenv("DJANGO_STATIC_HOST", "").rstrip("/")
+STATIC_URL = f"{STATIC_HOST}/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
@@ -182,6 +183,9 @@ STORAGES = {
         ),
     },
 }
+
+WHITENOISE_MAX_AGE = int(os.getenv("WHITENOISE_MAX_AGE", "31536000"))
+WHITENOISE_MANIFEST_STRICT = False
 
 if DEBUG:
     WHITENOISE_AUTOREFRESH = True
