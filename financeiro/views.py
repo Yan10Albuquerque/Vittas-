@@ -146,6 +146,33 @@ class LancamentoFinanceiroCreateView(ClinicaModuloRequiredMixin, CreateView):
         kwargs["request"] = self.request
         return kwargs
 
+    def get_initial(self):
+        initial = super().get_initial()
+        query = self.request.GET
+
+        for campo in ["tipo", "origem", "descricao", "nome_cliente"]:
+            if query.get(campo):
+                initial[campo] = query.get(campo)
+
+        for campo in ["paciente", "convenio", "categoria"]:
+            valor = (query.get(campo) or "").strip()
+            if valor.isdigit():
+                initial[campo] = int(valor)
+
+        for campo in ["data_lancamento", "competencia", "data_vencimento", "data_pagamento"]:
+            if query.get(campo):
+                initial[campo] = query.get(campo)
+
+        return initial
+
+    def get_success_url(self):
+        return self.request.POST.get("next") or self.request.GET.get("next") or self.success_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["next_url"] = self.request.POST.get("next") or self.request.GET.get("next") or ""
+        return context
+
     def form_valid(self, form):
         set_clinica(form.instance, self.request)
         form.instance.uscad = get_actor_name(self.request)
@@ -165,6 +192,14 @@ class LancamentoFinanceiroUpdateView(ClinicaModuloRequiredMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs["request"] = self.request
         return kwargs
+
+    def get_success_url(self):
+        return self.request.POST.get("next") or self.request.GET.get("next") or self.success_url
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["next_url"] = self.request.POST.get("next") or self.request.GET.get("next") or ""
+        return context
 
     def form_valid(self, form):
         form.instance.usalt = get_actor_name(self.request)

@@ -4,6 +4,8 @@ from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
+from base.history import resolve_history_user
+
 
 class CategoriaFinanceira(models.Model):
     class Tipo(models.TextChoices):
@@ -29,7 +31,7 @@ class CategoriaFinanceira(models.Model):
     dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
     usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
     dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-    history = HistoricalRecords()
+    history = HistoricalRecords(get_user=resolve_history_user)
 
     class Meta:
         verbose_name = "Categoria Financeira"
@@ -146,7 +148,7 @@ class LancamentoFinanceiro(models.Model):
     dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
     usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
     dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-    history = HistoricalRecords()
+    history = HistoricalRecords(get_user=resolve_history_user)
 
     class Meta:
         verbose_name = "Lançamento Financeiro"

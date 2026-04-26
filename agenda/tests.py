@@ -61,14 +61,33 @@ class AgendaModuleTests(TestCase):
             convenio=self.convenio,
         )
 
+    def _data_futura(self):
+        return timezone.localdate() + timezone.timedelta(days=1)
+
     def test_agenda_consultas_view_renderiza(self):
+        Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            paciente=self.paciente,
+            convenio=self.convenio,
+            tipo_consulta=self.tipo_consulta,
+            especialidade=self.especialidade,
+            status_agendamento=self.status_agendado,
+            data=self._data_futura(),
+            hora=time(8, 0),
+            status=Agenda.Status.AGENDADO,
+        )
+
         response = self.client.get(
             reverse("agenda:agenda_consultas"),
-            {"cod_medico": self.medico.pk, "data_agenda": timezone.localdate().isoformat()},
+            {"cod_medico": self.medico.pk, "data_agenda": self._data_futura().isoformat()},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Agenda de Consultas e Exames")
+        self.assertContains(response, "Prontuário")
+        self.assertContains(response, "Cobrança")
+        self.assertContains(response, "Iniciar")
 
     def test_agenda_api_cria_horarios_a_partir_da_agenda_do_medico(self):
         response = self.client.post(
@@ -94,7 +113,7 @@ class AgendaModuleTests(TestCase):
         agenda = Agenda.objects.create(
             clinica=self.clinica,
             medico=self.medico,
-            data=timezone.localdate(),
+            data=self._data_futura(),
             hora=time(9, 0),
             status=Agenda.Status.DISPONIVEL,
         )
@@ -127,7 +146,7 @@ class AgendaModuleTests(TestCase):
             tipo_consulta=self.tipo_consulta,
             especialidade=self.especialidade,
             status_agendamento=self.status_agendado,
-            data=timezone.localdate(),
+            data=self._data_futura(),
             hora=time(10, 0),
             status=Agenda.Status.AGENDADO,
         )
@@ -224,3 +243,104 @@ class AgendaModuleTests(TestCase):
         self.assertEqual(response.status_code, 200)
         consulta = Agenda.objects.get(clinica=self.clinica, medico=self.medico, hora=time(10, 0))
         self.assertEqual(consulta.status_agendamento, self.status_finalizado)
+
+    def test_fluxo_agenda_inicia_e_finaliza_atendimento(self):
+        agenda = Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            paciente=self.paciente,
+            convenio=self.convenio,
+            tipo_consulta=self.tipo_consulta,
+            especialidade=self.especialidade,
+            status_agendamento=self.status_agendado,
+            data=timezone.localdate(),
+            hora=time(11, 0),
+            status=Agenda.Status.AGENDADO,
+        )
+
+        iniciar_response = self.client.post(
+            reverse("agenda:agenda_iniciar_atendimento", args=[agenda.pk]),
+            {"next": reverse("agenda:agenda_consultas")},
+        )
+
+        self.assertEqual(iniciar_response.status_code, 302)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.status_agendamento, self.status_em_andamento)
+
+        finalizar_response = self.client.post(
+            reverse("agenda:agenda_finalizar_atendimento", args=[agenda.pk]),
+            {"next": reverse("agenda:agenda_consultas")},
+        )
+
+        self.assertEqual(finalizar_response.status_code, 302)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.status_agendamento, self.status_finalizado)
+
+    def test_inicio_manual_nao_regride_para_agendado_ao_recarregar_agenda(self):
+        agenda = Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            paciente=self.paciente,
+            convenio=self.convenio,
+            tipo_consulta=self.tipo_consulta,
+            especialidade=self.especialidade,
+            status_agendamento=self.status_agendado,
+            data=timezone.localdate(),
+            hora=time(11, 0),
+            status=Agenda.Status.AGENDADO,
+        )
+        Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            data=timezone.localdate(),
+            hora=time(11, 30),
+            status=Agenda.Status.DISPONIVEL,
+        )
+
+        self.client.post(reverse("agenda:agenda_iniciar_atendimento", args=[agenda.pk]))
+
+        now = timezone.make_aware(datetime.combine(timezone.localdate(), time(10, 45)))
+        with patch("agenda.services.timezone.localtime", return_value=now):
+            response = self.client.get(
+                reverse("agenda:agenda_consultas"),
+                {"cod_medico": self.medico.pk, "data_agenda": timezone.localdate().isoformat()},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.status_agendamento, self.status_em_andamento)
+
+    def test_finalizacao_manual_nao_regride_ao_recarregar_agenda(self):
+        agenda = Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            paciente=self.paciente,
+            convenio=self.convenio,
+            tipo_consulta=self.tipo_consulta,
+            especialidade=self.especialidade,
+            status_agendamento=self.status_agendado,
+            data=timezone.localdate(),
+            hora=time(11, 0),
+            status=Agenda.Status.AGENDADO,
+        )
+        Agenda.objects.create(
+            clinica=self.clinica,
+            medico=self.medico,
+            data=timezone.localdate(),
+            hora=time(11, 30),
+            status=Agenda.Status.DISPONIVEL,
+        )
+
+        self.client.post(reverse("agenda:agenda_iniciar_atendimento", args=[agenda.pk]))
+        self.client.post(reverse("agenda:agenda_finalizar_atendimento", args=[agenda.pk]))
+
+        now = timezone.make_aware(datetime.combine(timezone.localdate(), time(11, 5)))
+        with patch("agenda.services.timezone.localtime", return_value=now):
+            response = self.client.get(
+                reverse("agenda:agenda_consultas"),
+                {"cod_medico": self.medico.pk, "data_agenda": timezone.localdate().isoformat()},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        agenda.refresh_from_db()
+        self.assertEqual(agenda.status_agendamento, self.status_finalizado)

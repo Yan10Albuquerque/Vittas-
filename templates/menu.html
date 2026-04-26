@@ -80,6 +80,9 @@
                   Médicos</a></li>
               <li class="h-px bg-base-300 my-1"></li>
               {% endif %}
+              {% if request.user.pode_gerenciar_equipe %}
+              <li><a href="{% url 'usuario:colaborador_list' %}"><i class="fa-solid fa-users fa-fw"></i> Equipe</a></li>
+              {% endif %}
               <li><a href="{% url 'usuario:clinicas_list' %}"><i class="fa-solid fa-building fa-fw"></i> Dados da
                   Clínica</a></li>
             </ul>
@@ -93,17 +96,17 @@
       <div class="dropdown dropdown-end z-50">
         <label tabindex="0" class="btn btn-ghost btn-sm">
           <i class="fa-solid fa-circle-user"></i>
-          <span>{{ request.user.nome_fantasia }}</span>
+          <span>{{ request.user.nome_exibicao }}</span>
         </label>
         <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-64 z-[1]">
           <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">{{ request.user.email }}</li>
-          {% if clinica_atual %}
-          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">Tipo de Plano • {{
-            clinica_atual.get_plano_display }}</li>
+          {% if request.user.tipo_usuario == 'COLABORADOR' %}
+          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">Clínica • {{ clinica_atual.nome_fantasia }}</li>
+          <li class="text-center text-sm text-base-content/60 px-2 pointer-events-none">Papel • {{ request.user.get_papel_display }}</li>
           {% endif %}
           <li class="h-px bg-base-300 my-1"></li>
           <li><a href="#" onclick="document.getElementById('modal_perfil').classList.add('modal-open')"><i
-                class="fa-solid fa-address-card"></i> Dados da Clínica</a></li>
+                class="fa-solid fa-address-card"></i> Meu Acesso</a></li>
           <li class="h-px bg-base-300 my-1"></li>
           <li>
             <form method="post" action="{% url 'usuario:logout_api' %}">
@@ -141,6 +144,9 @@
           class="fa-solid fa-list-check"></i> Status de Agendamento</a></li>
     {% endif %}
     {% if mostrar_menu_configuracoes %}
+    {% if request.user.pode_gerenciar_equipe %}
+    <li><a href="{% url 'usuario:colaborador_list' %}" title="Equipe"><i class="fa-solid fa-users"></i> Equipe</a></li>
+    {% endif %}
     <li><a href="{% url 'usuario:clinicas_list' %}" title="Dados da Clínica"><i class="fa-solid fa-building"></i> Minha
         Clínica</a></li>
     {% endif %}
@@ -149,16 +155,22 @@
 
 <div id="modal_perfil" class="modal">
   <div class="modal-box">
-    <h3 class="font-semibold text-lg">Dados da Clínica</h3>
+    <h3 class="font-semibold text-lg">Meu Acesso</h3>
     <div class="mt-4 space-y-3">
       <div class="flex justify-center">
         <img src="{% static 'img/user.png' %}" class="rounded-full w-16 h-16" alt="Imagem da Clínica">
       </div>
       <div class="space-y-1">
-        <label class="label"><span class="label-text">Clínica</span></label>
-        <input class="input input-bordered input-sm w-full" type="text" value="{{ request.user.nome_fantasia }}"
+        <label class="label"><span class="label-text">{% if request.user.tipo_usuario == 'COLABORADOR' %}Usuário{% else %}Clínica{% endif %}</span></label>
+        <input class="input input-bordered input-sm w-full" type="text" value="{{ request.user.nome_exibicao }}"
           disabled>
       </div>
+      {% if request.user.tipo_usuario == 'COLABORADOR' %}
+      <div class="space-y-1">
+        <label class="label"><span class="label-text">Clínica vinculada</span></label>
+        <input class="input input-bordered input-sm w-full" type="text" value="{{ clinica_atual.nome_fantasia }}" disabled>
+      </div>
+      {% endif %}
       <div class="space-y-1">
         <label class="label"><span class="label-text">Email de acesso</span></label>
         <input class="input input-bordered input-sm w-full" type="text" value="{{ request.user.email }}" disabled>

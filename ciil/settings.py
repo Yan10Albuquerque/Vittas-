@@ -183,5 +183,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 # APontando o modelo de autenticação personalizado
 AUTH_USER_MODEL = "usuario.Clinica"
 
+AUTHENTICATION_BACKENDS = [
+    "usuario.auth_backends.ClinicaAuthBackend",
+    "usuario.auth_backends.ColaboradorAuthBackend",
+]
+
 LOGIN_REDIRECT_URL = "/home/"
 LOGIN_URL = "/login/"

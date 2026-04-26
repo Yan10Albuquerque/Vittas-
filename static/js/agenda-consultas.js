@@ -365,7 +365,7 @@ window.agendaConsultasPage = function () {
         return;
       }
 
-      this.consultasBody.innerHTML = "<tr><td colspan='6' class='py-6 text-center'><span class='loading loading-spinner loading-md'></span></td></tr>";
+      this.consultasBody.innerHTML = "<tr><td colspan='7' class='py-6 text-center'><span class='loading loading-spinner loading-md'></span></td></tr>";
     },
 
     showAgendaMessage(message) {
@@ -373,7 +373,7 @@ window.agendaConsultasPage = function () {
         return;
       }
 
-      this.consultasBody.innerHTML = `<tr><td colspan='6' class='py-6 text-center text-base-content/70'>${message}</td></tr>`;
+      this.consultasBody.innerHTML = `<tr><td colspan='7' class='py-6 text-center text-base-content/70'>${message}</td></tr>`;
     },
 
     selectDoctor(button) {

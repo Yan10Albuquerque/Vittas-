@@ -16,7 +16,7 @@ class AgendaEnfermagemRulesTest(TestCase):
             nome_fantasia="Clinica Teste",
             email="teste@clinica.com",
             password="123456",
-            plano=Clinica.Plano.PROFISSIONAL,
+            plano=Clinica.Plano.ENTERPRISE,
         )
         self.client.force_login(self.clinica)
         self.paciente = Paciente.objects.create(

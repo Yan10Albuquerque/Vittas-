@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
 
+from base.history import resolve_history_user
+
 
 class Paciente(models.Model):
     clinica = models.ForeignKey(
@@ -48,7 +50,7 @@ class Paciente(models.Model):
     dtcad = models.DateTimeField(auto_now_add=True)
     usalt = models.CharField(max_length=25, null=True, blank=True)
     dtalt = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
+    history = HistoricalRecords(get_user=resolve_history_user)
 
     def __str__(self):
         return self.nome
@@ -99,7 +101,7 @@ class PacienteVacina(models.Model):
     dtcad = models.DateTimeField(auto_now_add=True)
     usalt = models.CharField(max_length=25, null=True, blank=True)
     dtalt = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
+    history = HistoricalRecords(get_user=resolve_history_user)
 
     def __str__(self):
         return (

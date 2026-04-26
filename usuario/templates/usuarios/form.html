@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Editar colaborador{% else %}Novo colaborador{% endif %}{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl mx-auto">
+    <div class="vittas-page-header">
+      <h1 class="page-title text-3xl font-semibold">
+        <i class="fa-solid fa-user-plus mr-2"></i>
+        {% if object %}Editar colaborador{% else %}Novo colaborador{% endif %}
+      </h1>
+      <a class="btn btn-ghost btn-sm" href="{% url 'usuario:colaborador_list' %}">
+        <i class="fa-solid fa-reply"></i> Voltar
+      </a>
+    </div>
+
+    <form method="post" class="card bg-base-100 shadow border border-white/10">
+      {% csrf_token %}
+      <div class="card-body">
+        {% if form.non_field_errors %}
+          <div class="alert alert-error">
+            <span>{{ form.non_field_errors|join:", " }}</span>
+          </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="form-control col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Nome</span></label>
+            {{ form.nome }}
+            {{ form.nome.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-6">
+            <label class="label"><span class="label-text">Email</span></label>
+            {{ form.email }}
+            {{ form.email.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">Papel</span></label>
+            {{ form.papel }}
+            {{ form.papel.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">Ativo</span></label>
+            {{ form.status }}
+            {{ form.status.errors }}
+          </div>
+
+          <div class="form-control col-span-12 md:col-span-4">
+            <label class="label"><span class="label-text">Resetar senha no próximo login</span></label>
+            {{ form.reseta_senha }}
+            {{ form.reseta_senha.errors }}
+          </div>
+
+          <div class="form-control col-span-12">
+            <label class="label"><span class="label-text">Senha de Acesso</span></label>
+            {{ form.password }}
+            {% if form.password.help_text %}
+              <label class="label">
+                <span class="label-text-alt">{{ form.password.help_text }}</span>
+              </label>
+            {% endif %}
+            {{ form.password.errors }}
+          </div>
+
+          <div class="form-control col-span-12">
+            <label class="label"><span class="label-text">Permissões de módulos</span></label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-base-200 rounded-xl p-4">
+              {% for checkbox in form.modulos_permitidos %}
+                <label class="label cursor-pointer justify-start gap-3 rounded-lg border border-base-300 bg-base-100 px-4 py-3">
+                  {{ checkbox.tag }}
+                  <span class="label-text font-medium">{{ checkbox.choice_label }}</span>
+                </label>
+              {% empty %}
+                <div class="text-sm text-base-content/70">
+                  Este papel não possui módulos configuráveis.
+                </div>
+              {% endfor %}
+            </div>
+            {% if form.modulos_permitidos.help_text %}
+              <label class="label">
+                <span class="label-text-alt">{{ form.modulos_permitidos.help_text }}</span>
+              </label>
+            {% endif %}
+            {{ form.modulos_permitidos.errors }}
+          </div>
+        </div>
+
+        <div class="alert alert-info shadow-sm mt-4">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>O papel sugere uma configuração inicial, mas você pode marcar qualquer módulo abaixo. O acesso final sempre respeita também o plano contratado pela clínica.</span>
+        </div>
+      </div>
+
+      <div class="card-actions justify-end px-6 pb-6">
+        <button class="btn btn-primary" type="submit">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

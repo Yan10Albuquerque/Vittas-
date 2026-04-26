@@ -4,10 +4,11 @@ from base.tenancy import MODULO_LABELS, get_clinica_atual
 def unidades_context(request):
     clinica = get_clinica_atual(request)
     modulos_plano = {modulo: False for modulo in MODULO_LABELS}
+    user = getattr(request, "user", None)
 
-    if clinica and getattr(clinica, "is_authenticated", False):
+    if user and getattr(user, "is_authenticated", False):
         for modulo in modulos_plano:
-            modulos_plano[modulo] = clinica.modulo_disponivel(modulo)
+            modulos_plano[modulo] = user.modulo_disponivel(modulo)
 
     return {
         "clinica_atual": clinica,

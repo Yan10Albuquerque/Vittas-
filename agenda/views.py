@@ -1,15 +1,22 @@
 from datetime import date, datetime, timedelta
+from urllib.parse import urlencode
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import TemplateView
 
 from base.models import Convenio, Especialidade, StatusAgendamento, TipoConsulta
-from base.statuses import get_status_agendamento_em_andamento, get_status_agendamento_padrao
+from base.statuses import (
+    get_status_agendamento_em_andamento,
+    get_status_agendamento_finalizado,
+    get_status_agendamento_padrao,
+)
 from base.tenancy import ClinicaModuloRequiredMixin, filtrar_por_clinica, get_actor_name, modulo_requerido
 from medico.models import Medico, MedicoAgenda, MedicoEspecialidade
 from paciente.models import Paciente
@@ -43,6 +50,87 @@ def _status_label_classes(status_obj):
 
     cor = (status_obj.cor or '').strip()
     return cor or 'btn-ghost'
+
+
+def _normalize_status_text(value):
+    return (value or '').strip().lower()
+
+
+def _is_status_in(consulta, termos):
+    descricao = _normalize_status_text(consulta.status_agendamento.descricao if consulta.status_agendamento_id else '')
+    return any(termo in descricao for termo in termos)
+
+
+def _build_workflow_links(request, consulta):
+    if not consulta.paciente_id:
+        return {'prontuario_url': '', 'financeiro_url': ''}
+
+    next_url = request.get_full_path()
+    prontuario_query = urlencode(
+        {
+            'tab': 'prontuario',
+            'agenda_id': consulta.pk,
+            'next': next_url,
+        }
+    )
+    financeiro_query = urlencode(
+        {
+            'paciente': consulta.paciente_id,
+            'convenio': consulta.convenio_id or '',
+            'origem': 'CONSULTA',
+            'tipo': 'RECEITA',
+            'descricao': f"Consulta - {consulta.paciente.nome}",
+            'data_lancamento': consulta.data.isoformat(),
+            'competencia': consulta.data.isoformat(),
+            'data_vencimento': consulta.data.isoformat(),
+            'next': next_url,
+        }
+    )
+    return {
+        'prontuario_url': f"{reverse('paciente:paciente_update', args=[consulta.paciente_id])}?{prontuario_query}",
+        'financeiro_url': f"{reverse('financeiro:lancamento_create')}?{financeiro_query}",
+    }
+
+
+def _build_workflow_state(request, consulta):
+    status_em_andamento = get_status_agendamento_em_andamento(request)
+    status_finalizado = get_status_agendamento_finalizado(request)
+    descricao_status = _normalize_status_text(consulta.status_agendamento.descricao if consulta.status_agendamento_id else '')
+    em_andamento = bool(status_em_andamento and consulta.status_agendamento_id == status_em_andamento.pk) or 'andamento' in descricao_status or 'atendimento' in descricao_status
+    finalizado = bool(status_finalizado and consulta.status_agendamento_id == status_finalizado.pk) or 'finaliz' in descricao_status or 'conclu' in descricao_status
+    encerrado = finalizado or 'cancel' in descricao_status or 'falt' in descricao_status
+    return {
+        'pode_iniciar': consulta.status == Agenda.Status.AGENDADO and consulta.paciente_id and not em_andamento and not encerrado,
+        'pode_finalizar': consulta.status == Agenda.Status.AGENDADO and consulta.paciente_id and not finalizado and ('andamento' in descricao_status or 'atendimento' in descricao_status or em_andamento),
+        'atendimento_ativo': em_andamento and not finalizado,
+        'atendimento_finalizado': finalizado,
+    }
+
+
+def _redirect_back(request, fallback_name='agenda:agenda_consultas'):
+    destino = request.POST.get('next') or request.GET.get('next')
+    return redirect(destino or reverse(fallback_name))
+
+
+def _atualizar_fluxo_atendimento(request, pk, status_destino, mensagem_sucesso):
+    agenda = get_object_or_404(
+        filtrar_por_clinica(Agenda.objects.select_related('paciente', 'status_agendamento'), request),
+        pk=pk,
+    )
+
+    if agenda.status != Agenda.Status.AGENDADO or not agenda.paciente_id:
+        messages.error(request, 'Somente consultas agendadas com paciente podem seguir no fluxo de atendimento.')
+        return _redirect_back(request)
+
+    if not status_destino:
+        messages.error(request, 'Não foi possível localizar o status necessário para o fluxo de atendimento.')
+        return _redirect_back(request)
+
+    agenda.status_agendamento = status_destino
+    agenda.usalt = get_actor_name(request)
+    agenda.save(update_fields=['status_agendamento', 'usalt', 'dtalt'])
+    messages.success(request, mensagem_sucesso)
+    return _redirect_back(request)
 
 
 class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
@@ -102,9 +190,12 @@ class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
         actor_name = get_actor_name(self.request) if self.request.user.is_authenticated else None
         agenda_consultas = []
         status_em_andamento = get_status_agendamento_em_andamento(self.request)
+        status_finalizado = get_status_agendamento_finalizado(self.request)
         for index, consulta in enumerate(agenda_qs):
             next_hora = agenda_qs[index + 1].hora if index + 1 < len(agenda_qs) else None
             sync_agenda_status(consulta, self.request, next_hora=next_hora, actor_name=actor_name)
+            workflow_links = _build_workflow_links(self.request, consulta)
+            workflow_state = _build_workflow_state(self.request, consulta)
             agenda_consultas.append(
                 {
                     'id': consulta.id,
@@ -119,6 +210,12 @@ class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
                     'status_agendamento': consulta.status_agendamento.descricao if consulta.status_agendamento else '',
                     'hora_button_classes': _status_button_classes(consulta),
                     'status_button_classes': _status_label_classes(consulta.status_agendamento),
+                    'prontuario_url': workflow_links['prontuario_url'],
+                    'financeiro_url': workflow_links['financeiro_url'],
+                    'pode_iniciar': workflow_state['pode_iniciar'],
+                    'pode_finalizar': workflow_state['pode_finalizar'],
+                    'atendimento_ativo': workflow_state['atendimento_ativo'],
+                    'atendimento_finalizado': workflow_state['atendimento_finalizado'],
                 }
             )
 
@@ -151,6 +248,7 @@ class AgendaConsultasView(ClinicaModuloRequiredMixin, TemplateView):
                     nivel__lte=2,
                 ).order_by('nivel', 'descricao'), self.request),
                 'status_em_atendimento_id': status_em_andamento.pk if status_em_andamento else '',
+                'status_finalizado_id': status_finalizado.pk if status_finalizado else '',
                 'pacientes': filtrar_por_clinica(Paciente.objects.filter(status=True), self.request)
                 .select_related('convenio')
                 .order_by('nome')[:200],
@@ -401,3 +499,27 @@ def _novo_status(request):
     agenda.save(update_fields=['status_agendamento', 'usalt', 'dtalt'])
 
     return JsonResponse({'success': True, 'message': 'Status atualizado com sucesso.'})
+
+
+@login_required
+@require_POST
+@modulo_requerido('agenda')
+def iniciar_atendimento(request, pk):
+    return _atualizar_fluxo_atendimento(
+        request,
+        pk,
+        get_status_agendamento_em_andamento(request),
+        'Atendimento iniciado com sucesso.',
+    )
+
+
+@login_required
+@require_POST
+@modulo_requerido('agenda')
+def finalizar_atendimento(request, pk):
+    return _atualizar_fluxo_atendimento(
+        request,
+        pk,
+        get_status_agendamento_finalizado(request),
+        'Atendimento finalizado com sucesso.',
+    )

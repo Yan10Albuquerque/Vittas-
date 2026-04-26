@@ -16,6 +16,9 @@
 
   <form method="post" class="card bg-base-100 shadow">
     {% csrf_token %}
+    {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
     <div class="card-body">
       {% if form.errors %}
         <div class="alert alert-error mb-4">
@@ -96,6 +99,11 @@
     </div>
 
     <div class="card-actions justify-end px-6 pb-6">
+      {% if next_url %}
+      <a class="btn btn-ghost" href="{{ next_url }}">
+        <i class="fa-solid fa-reply"></i> Voltar
+      </a>
+      {% endif %}
       <button class="btn btn-primary" type="submit">
         <i class="fa-solid fa-floppy-disk"></i> Salvar
       </button>

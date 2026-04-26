@@ -43,6 +43,8 @@
       <form method="post" id="form-paciente">
         {% csrf_token %}
         <textarea name="prontuario" hidden>{{ form.prontuario.value|default_if_none:'' }}</textarea>
+        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        {% if agenda_id %}<input type="hidden" name="agenda_id" value="{{ agenda_id }}">{% endif %}
 
         {% if form.errors %}
         <div class="alert alert-error mb-4">
@@ -190,6 +192,11 @@
         <div class="divider"></div>
 
         <div class="flex justify-end">
+          {% if next_url %}
+          <a href="{{ next_url }}" class="btn btn-ghost btn-sm mr-2">
+            <i class="fas fa-reply"></i> Voltar para agenda
+          </a>
+          {% endif %}
           <button type="submit" class="btn btn-primary btn-sm">
             <i class="fas fa-save"></i> Salvar Informações
           </button>
@@ -199,10 +206,23 @@
 
     {% if object %}
     <div x-show="activeTab === 'prontuario'" style="display: none;">
-      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {% for card in prontuario_resumo.cards %}
+        <div class="card bg-base-100 border border-base-300 shadow-sm">
+          <div class="card-body p-4">
+            <span class="text-xs uppercase tracking-wide text-base-content/60">{{ card.label }}</span>
+            <strong class="text-3xl {{ card.classe }}">{{ card.valor }}</strong>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-6 mb-6">
         <form method="post" class="card bg-base-100 border border-base-300 shadow-sm">
           {% csrf_token %}
           <input type="hidden" name="salvar_prontuario" value="1">
+          {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+          {% if agenda_id %}<input type="hidden" name="agenda_id" value="{{ agenda_id }}">{% endif %}
           <div class="card-body">
             <div class="flex items-center justify-between gap-3">
               <div>
@@ -220,6 +240,11 @@
             </div>
 
             <div class="card-actions justify-end">
+              {% if next_url %}
+              <a href="{{ next_url }}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-reply"></i> Voltar para agenda
+              </a>
+              {% endif %}
               <button type="submit" class="btn btn-primary btn-sm">
                 <i class="fas fa-save"></i> Salvar Prontuário
               </button>
@@ -230,16 +255,71 @@
         <div class="card bg-base-100 border border-base-300 shadow-sm">
           <div class="card-body">
             <div>
-              <h2 class="card-title">Linha do tempo do paciente</h2>
-              <p class="text-sm text-base-content/60">Aqui ficam concentrados os registros que o sistema encontrou sobre tudo o que este paciente já fez na clínica.</p>
+              <h2 class="card-title">Resumo clínico</h2>
+              <p class="text-sm text-base-content/60">Visão rápida do cenário atual do paciente dentro da clínica.</p>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-4 text-sm">
+              <div class="rounded-2xl border border-base-300 bg-base-200/50 p-4">
+                <div class="text-xs uppercase tracking-wide text-base-content/60 mb-1">Último evento</div>
+                {% if prontuario_resumo.ultimo_evento %}
+                <div class="font-semibold">{{ prontuario_resumo.ultimo_evento.titulo }}</div>
+                <div class="text-base-content/70">{{ prontuario_resumo.ultimo_evento.instante|date:"d/m/Y H:i" }}</div>
+                {% else %}
+                <div class="text-base-content/70">Nenhum evento registrado ainda.</div>
+                {% endif %}
+              </div>
+
+              <div class="rounded-2xl border border-base-300 bg-base-200/50 p-4">
+                <div class="text-xs uppercase tracking-wide text-base-content/60 mb-1">Última consulta</div>
+                {% if prontuario_resumo.ultima_consulta %}
+                <div class="font-semibold">{{ prontuario_resumo.ultima_consulta.titulo }}</div>
+                <div class="text-base-content/70">{{ prontuario_resumo.ultima_consulta.instante|date:"d/m/Y H:i" }}</div>
+                {% if prontuario_resumo.ultima_consulta.status %}
+                <div class="mt-2">
+                  <span class="badge badge-sm {{ prontuario_resumo.ultima_consulta.status_class }}">{{ prontuario_resumo.ultima_consulta.status }}</span>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-base-content/70">Sem consultas registradas.</div>
+                {% endif %}
+              </div>
+
+              <div class="rounded-2xl border border-base-300 bg-base-200/50 p-4">
+                <div class="text-xs uppercase tracking-wide text-base-content/60 mb-1">Financeiro vinculado</div>
+                <div class="font-semibold">R$ {{ prontuario_resumo.financeiro_em_aberto|floatformat:2 }}</div>
+                <div class="text-base-content/70">Em aberto para este paciente.</div>
+              </div>
+
+              <div class="rounded-2xl border border-base-300 bg-base-200/50 p-4">
+                <div class="text-xs uppercase tracking-wide text-base-content/60 mb-1">Situação do prontuário</div>
+                {% if prontuario_resumo.tem_prontuario %}
+                <div class="font-semibold">Com evolução clínica registrada</div>
+                <div class="text-base-content/70">As anotações manuais já fazem parte do histórico.</div>
+                {% else %}
+                <div class="font-semibold">Sem evolução escrita ainda</div>
+                <div class="text-base-content/70">Use o campo ao lado para registrar a evolução do paciente.</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body">
+          <div>
+            <h2 class="card-title">Linha do tempo clínica</h2>
+            <p class="text-sm text-base-content/60">Tudo o que o sistema encontrou sobre o relacionamento do paciente com a clínica fica concentrado aqui.</p>
+          </div>
+
+          <div class="space-y-4">
               {% for evento in timeline_eventos %}
               <div class="border border-base-300 rounded-2xl p-4 bg-base-200/40">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                   <div class="flex items-center gap-2">
-                    <span class="badge badge-primary badge-outline">{{ evento.tipo }}</span>
+                    <span class="badge {{ evento.badge_class }}">{{ evento.tipo }}</span>
+                    <span class="text-base-content/60"><i class="{{ evento.icon }}"></i></span>
                     <h3 class="font-semibold">{{ evento.titulo }}</h3>
                   </div>
                   <div class="text-sm text-base-content/60">
@@ -247,7 +327,24 @@
                   </div>
                 </div>
 
-                <p class="text-sm text-base-content/80">{{ evento.descricao }}</p>
+                {% if evento.status %}
+                <div class="mb-3">
+                  <span class="badge badge-sm {{ evento.status_class }}">{{ evento.status }}</span>
+                </div>
+                {% endif %}
+
+                {% if evento.descricao %}
+                <p class="text-sm text-base-content/80 whitespace-pre-line">{{ evento.descricao }}</p>
+                {% endif %}
+
+                {% if evento.detalhes %}
+                <div class="mt-3 flex flex-wrap gap-2">
+                  {% for detalhe in evento.detalhes %}
+                  <span class="badge badge-ghost badge-sm">{{ detalhe }}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+
                 {% if evento.valor %}
                 <p class="text-sm font-semibold mt-2">Valor: R$ {{ evento.valor|floatformat:2 }}</p>
                 {% endif %}
@@ -258,7 +355,6 @@
                 <span>Nenhum evento encontrado para compor o prontuário deste paciente ainda.</span>
               </div>
               {% endfor %}
-            </div>
           </div>
         </div>
       </div>

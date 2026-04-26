@@ -181,3 +181,24 @@ class FinanceiroModuleTest(TestCase):
 
         self.assertContains(response, 'data-valor-aberto="150,00"')
         self.assertContains(response, "normalizarValorFinanceiro")
+
+    def test_criacao_de_lancamento_pode_ser_prefillada_pela_agenda(self):
+        response = self.client.get(
+            reverse("financeiro:lancamento_create"),
+            {
+                "paciente": self.paciente.pk,
+                "convenio": self.convenio.pk,
+                "origem": LancamentoFinanceiro.Origem.CONSULTA,
+                "tipo": LancamentoFinanceiro.Tipo.RECEITA,
+                "descricao": "Consulta - Paciente Financeiro",
+                "data_lancamento": timezone.localdate().isoformat(),
+                "competencia": timezone.localdate().isoformat(),
+                "data_vencimento": timezone.localdate().isoformat(),
+                "next": reverse("agenda:agenda_consultas"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'name="descricao" value="Consulta - {self.paciente.nome}"')
+        self.assertContains(response, f'<option value="{self.paciente.pk}" selected>')
+        self.assertContains(response, f'name="next" value="{reverse("agenda:agenda_consultas")}"')

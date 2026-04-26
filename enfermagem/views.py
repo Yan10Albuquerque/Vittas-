@@ -93,7 +93,7 @@ def NovaAutorizacaoView(request):
             procedimento=procedimento,
             status=status,
             observacoes=observacoes,
-            data_resposta=datetime.now(),
+            data_resposta=timezone.now(),
         )
         nova_autorizacao.save()
 
@@ -127,7 +127,7 @@ def AutorizacaoUpdateView(request, pk):
 
         autorizacao.status = status
         autorizacao.observacoes = observacoes
-        autorizacao.data_resposta = datetime.now()
+        autorizacao.data_resposta = timezone.now()
         autorizacao.save()
 
         return redirect("enfermagem:autorizacao_list")

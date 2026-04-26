@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from collections import Counter
 
 from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, transaction
@@ -17,6 +18,47 @@ from agenda.services import sync_agenda_status
 from .forms import PacienteForm
 from .models import Paciente
 
+from enfermagem.models import AgendaEnfermagem, Autorizacao
+
+
+TIMELINE_STYLES = {
+    'Consulta': {
+        'badge_class': 'badge-info badge-outline',
+        'status_class': 'badge-info',
+        'icon': 'fa-solid fa-stethoscope',
+    },
+    'Autorizacao': {
+        'badge_class': 'badge-warning badge-outline',
+        'status_class': 'badge-warning',
+        'icon': 'fa-solid fa-file-circle-check',
+    },
+    'Procedimento': {
+        'badge_class': 'badge-secondary badge-outline',
+        'status_class': 'badge-secondary',
+        'icon': 'fa-solid fa-hand-holding-medical',
+    },
+    'Vacina': {
+        'badge_class': 'badge-success badge-outline',
+        'status_class': 'badge-success',
+        'icon': 'fa-solid fa-syringe',
+    },
+    'Financeiro': {
+        'badge_class': 'badge-accent badge-outline',
+        'status_class': 'badge-accent',
+        'icon': 'fa-solid fa-wallet',
+    },
+    'Prontuario': {
+        'badge_class': 'badge-primary badge-outline',
+        'status_class': 'badge-primary',
+        'icon': 'fa-solid fa-notes-medical',
+    },
+    'Cadastro': {
+        'badge_class': 'badge-neutral badge-outline',
+        'status_class': 'badge-neutral',
+        'icon': 'fa-solid fa-id-card-clip',
+    },
+}
+
 
 def _as_local_datetime(value):
     if value is None:
@@ -24,6 +66,107 @@ def _as_local_datetime(value):
     if timezone.is_naive(value):
         value = timezone.make_aware(value, timezone.get_current_timezone())
     return timezone.localtime(value)
+
+
+def _build_timeline_event(tipo, titulo, instante, descricao=None, *, detalhes=None, status=None, valor=None):
+    style = TIMELINE_STYLES.get(tipo, TIMELINE_STYLES['Cadastro'])
+    return {
+        'tipo': tipo,
+        'titulo': titulo,
+        'instante': instante,
+        'descricao': descricao or '',
+        'detalhes': [detalhe for detalhe in (detalhes or []) if detalhe],
+        'status': status or '',
+        'valor': valor,
+        'badge_class': style['badge_class'],
+        'status_class': style['status_class'],
+        'icon': style['icon'],
+    }
+
+
+def _build_prontuario_history_events(paciente):
+    eventos = []
+    historicos = list(paciente.history.order_by('history_date', 'history_id'))
+    historico_anterior = None
+
+    for historico in historicos:
+        instante = _as_local_datetime(historico.history_date)
+        responsavel = historico.history_user or historico.history_change_reason or 'Sistema'
+        prontuario_atual = (historico.prontuario or '').strip()
+        prontuario_anterior = (getattr(historico_anterior, 'prontuario', '') or '').strip() if historico_anterior else ''
+
+        if historico.history_type == '+':
+            eventos.append(
+                _build_timeline_event(
+                    'Cadastro',
+                    'Cadastro do paciente',
+                    instante,
+                    detalhes=[f'Responsável: {responsavel}'],
+                )
+            )
+        elif historico.history_type == '-':
+            eventos.append(
+                _build_timeline_event(
+                    'Cadastro',
+                    'Registro do paciente removido',
+                    instante,
+                    detalhes=[f'Responsável: {responsavel}'],
+                    status='Removido',
+                )
+            )
+        else:
+            if prontuario_atual != prontuario_anterior:
+                descricao = prontuario_atual or 'Prontuário clínico limpo.'
+                eventos.append(
+                    _build_timeline_event(
+                        'Prontuario',
+                        'Evolução do prontuário atualizada',
+                        instante,
+                        descricao=descricao,
+                        detalhes=[f'Responsável: {responsavel}'],
+                    )
+                )
+            else:
+                eventos.append(
+                    _build_timeline_event(
+                        'Cadastro',
+                        'Dados cadastrais atualizados',
+                        instante,
+                        detalhes=[f'Responsável: {responsavel}'],
+                    )
+                )
+
+        historico_anterior = historico
+
+    return eventos
+
+
+def _build_prontuario_summary(paciente, eventos, autorizacoes, agendamentos_enfermagem):
+    contador = Counter(evento['tipo'] for evento in eventos)
+    financeiro_em_aberto = sum(
+        lancamento.valor_em_aberto
+        for lancamento in paciente.lancamentos_financeiros.exclude(
+            status__in=['PAGO', 'CANCELADO']
+        )
+    )
+    autorizacoes_pendentes = sum(1 for autorizacao in autorizacoes if autorizacao.status == 'PENDENTE')
+    procedimentos_ativos = sum(1 for agendamento in agendamentos_enfermagem if agendamento.status == 'AGENDADO')
+    ultima_consulta = next((evento for evento in eventos if evento['tipo'] == 'Consulta'), None)
+    ultimo_evento = eventos[0] if eventos else None
+
+    return {
+        'cards': [
+            {'label': 'Eventos clínicos', 'valor': len(eventos), 'classe': 'text-primary'},
+            {'label': 'Consultas registradas', 'valor': contador.get('Consulta', 0), 'classe': 'text-info'},
+            {'label': 'Procedimentos ativos', 'valor': procedimentos_ativos, 'classe': 'text-secondary'},
+            {'label': 'Autorizações pendentes', 'valor': autorizacoes_pendentes, 'classe': 'text-warning'},
+        ],
+        'financeiro_em_aberto': financeiro_em_aberto,
+        'ultima_consulta': ultima_consulta,
+        'ultimo_evento': ultimo_evento,
+        'tem_prontuario': bool((paciente.prontuario or '').strip()),
+        'autorizacoes_pendentes': autorizacoes_pendentes,
+    }
 
 
 def _build_prontuario_timeline(paciente):
@@ -34,93 +177,98 @@ def _build_prontuario_timeline(paciente):
         'tipo_consulta',
         'especialidade',
         'status_agendamento',
+        'convenio',
     ):
         instante = _as_local_datetime(timezone.datetime.combine(agendamento.data, agendamento.hora))
-        detalhes = list(
-            filter(
-                None,
-                [
+        eventos.append(
+            _build_timeline_event(
+                'Consulta',
+                agendamento.tipo_consulta.descricao if agendamento.tipo_consulta_id else 'Atendimento agendado',
+                instante,
+                descricao='Consulta registrada na agenda clínica.',
+                detalhes=[
                     f"Médico: {agendamento.medico.nome}" if agendamento.medico_id else None,
-                    f"Tipo: {agendamento.tipo_consulta.descricao}" if agendamento.tipo_consulta_id else None,
                     f"Especialidade: {agendamento.especialidade.descricao}" if agendamento.especialidade_id else None,
-                    f"Status: {agendamento.status_agendamento.descricao}" if agendamento.status_agendamento_id else None,
+                    f"Convênio: {agendamento.convenio.nome}" if agendamento.convenio_id else None,
                 ],
+                status=agendamento.status_agendamento.descricao if agendamento.status_agendamento_id else agendamento.get_status_display(),
             )
         )
+
+    autorizacoes = list(
+        Autorizacao.objects.filter(paciente=paciente).select_related('procedimento').order_by('-data_solicitacao', '-pk')
+    )
+    for autorizacao in autorizacoes:
+        instante = _as_local_datetime(autorizacao.data_resposta or autorizacao.data_solicitacao)
         eventos.append(
-            {
-                'tipo': 'Consulta',
-                'titulo': 'Atendimento agendado',
-                'instante': instante,
-                'descricao': " | ".join(detalhes) or 'Agendamento vinculado ao paciente.',
-            }
+            _build_timeline_event(
+                'Autorizacao',
+                autorizacao.procedimento.nome if autorizacao.procedimento_id else 'Autorização clínica',
+                instante,
+                descricao=autorizacao.observacoes or 'Solicitação/autorização registrada para o paciente.',
+                detalhes=[
+                    f"Procedimento: {autorizacao.procedimento.descricao}" if autorizacao.procedimento_id else None,
+                ],
+                status=autorizacao.get_status_display(),
+            )
+        )
+
+    agendamentos_enfermagem = list(
+        AgendaEnfermagem.objects.filter(autorizacao__paciente=paciente)
+        .select_related('autorizacao__procedimento')
+        .order_by('-data_agendamento', '-hora_agendamento', '-pk')
+    )
+    for agendamento in agendamentos_enfermagem:
+        eventos.append(
+            _build_timeline_event(
+                'Procedimento',
+                agendamento.autorizacao.procedimento.nome if agendamento.autorizacao_id and agendamento.autorizacao.procedimento_id else 'Procedimento agendado',
+                _as_local_datetime(agendamento.data_hora_agendada or agendamento.data_agendamento),
+                descricao=agendamento.observacoes or 'Agendamento da enfermagem vinculado ao paciente.',
+                detalhes=[
+                    f"Procedimento: {agendamento.autorizacao.procedimento.descricao}" if agendamento.autorizacao_id and agendamento.autorizacao.procedimento_id else None,
+                ],
+                status=agendamento.get_status_display(),
+            )
         )
 
     for vacina in paciente.vacinas.select_related('aplicador', 'forma_pagamento'):
         instante_base = timezone.datetime.combine(vacina.data_aplicacao, timezone.datetime.min.time()) if vacina.data_aplicacao else vacina.dtcad
-        instante = _as_local_datetime(instante_base)
-        detalhes = list(
-            filter(
-                None,
-                [
+        eventos.append(
+            _build_timeline_event(
+                'Vacina',
+                vacina.descricao_vacina or 'Vacina registrada',
+                _as_local_datetime(instante_base),
+                descricao=vacina.obs or 'Aplicação registrada no histórico do paciente.',
+                detalhes=[
                     f"Aplicador: {vacina.aplicador}" if vacina.aplicador_id else None,
                     f"Pagamento: {vacina.forma_pagamento}" if vacina.forma_pagamento_id else None,
-                    f"Observação: {vacina.obs}" if vacina.obs else None,
                 ],
             )
-        )
-        eventos.append(
-            {
-                'tipo': 'Vacina',
-                'titulo': vacina.descricao_vacina or 'Vacina registrada',
-                'instante': instante,
-                'descricao': " | ".join(detalhes) or 'Aplicação registrada no histórico do paciente.',
-            }
         )
 
     for lancamento in paciente.lancamentos_financeiros.select_related('categoria', 'forma_pagamento'):
         instante_base = timezone.datetime.combine(lancamento.data_lancamento, timezone.datetime.min.time())
-        instante = _as_local_datetime(instante_base)
-        detalhes = list(
-            filter(
-                None,
-                [
+        eventos.append(
+            _build_timeline_event(
+                'Financeiro',
+                lancamento.descricao,
+                _as_local_datetime(instante_base),
+                descricao=lancamento.observacoes or 'Lançamento financeiro associado ao paciente.',
+                detalhes=[
                     f"Categoria: {lancamento.categoria.descricao}" if lancamento.categoria_id else None,
                     f"Origem: {lancamento.get_origem_display()}",
-                    f"Status: {lancamento.get_status_display()}",
                     f"Forma de pagamento: {lancamento.forma_pagamento}" if lancamento.forma_pagamento_id else None,
                 ],
+                status=lancamento.get_status_display(),
+                valor=lancamento.valor,
             )
         )
-        eventos.append(
-            {
-                'tipo': 'Financeiro',
-                'titulo': lancamento.descricao,
-                'instante': instante,
-                'descricao': " | ".join(detalhes) or 'Lançamento financeiro associado ao paciente.',
-                'valor': lancamento.valor,
-            }
-        )
 
-    for historico in paciente.history.all():
-        if historico.history_type == '+':
-            titulo = 'Cadastro do paciente'
-        elif historico.history_type == '~':
-            titulo = 'Dados cadastrais atualizados'
-        else:
-            titulo = 'Registro do paciente removido'
-
-        eventos.append(
-            {
-                'tipo': 'Cadastro',
-                'titulo': titulo,
-                'instante': _as_local_datetime(historico.history_date),
-                'descricao': f"Responsável: {historico.history_user or historico.history_change_reason or 'Sistema'}",
-            }
-        )
+    eventos.extend(_build_prontuario_history_events(paciente))
 
     eventos.sort(key=lambda evento: evento['instante'] or timezone.now(), reverse=True)
-    return eventos
+    return eventos, _build_prontuario_summary(paciente, eventos, autorizacoes, agendamentos_enfermagem)
 
 
 class PacienteListView(ClinicaModuloRequiredMixin, ListView):
@@ -175,23 +323,48 @@ class PacienteUpdateView(ClinicaModuloRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_tab'] = kwargs.get('active_tab', self.request.GET.get('tab', 'cadastro'))
-        context['timeline_eventos'] = _build_prontuario_timeline(self.object)
+        timeline_eventos, prontuario_resumo = _build_prontuario_timeline(self.object)
+        context['timeline_eventos'] = timeline_eventos
+        context['prontuario_resumo'] = prontuario_resumo
+        context['next_url'] = self.request.POST.get('next') or self.request.GET.get('next') or ''
+        context['agenda_id'] = self.request.POST.get('agenda_id') or self.request.GET.get('agenda_id') or ''
         return context
+
+    def get_success_url(self):
+        return self.request.POST.get('next') or self.request.GET.get('next') or self.success_url
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
 
         if 'salvar_prontuario' in request.POST:
+            agenda_id = request.POST.get('agenda_id') or request.GET.get('agenda_id')
             self.object.prontuario = (request.POST.get('prontuario') or '').strip()
             self.object.usalt = get_actor_name(request)
             self.object.save(update_fields=['prontuario', 'usalt', 'dtalt'])
+            if agenda_id:
+                from agenda.models import Agenda
+
+                agenda = filtrar_por_clinica(Agenda.objects.filter(pk=agenda_id), request).first()
+                if agenda:
+                    sync_agenda_status(agenda, request, actor_name=get_actor_name(request))
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
             return redirect(f"{request.path}?tab=prontuario")
 
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        agenda_id = self.request.POST.get('agenda_id') or self.request.GET.get('agenda_id')
         form.instance.usalt = get_actor_name(self.request)
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if agenda_id:
+            from agenda.models import Agenda
+
+            agenda = filtrar_por_clinica(Agenda.objects.filter(pk=agenda_id), self.request).first()
+            if agenda:
+                sync_agenda_status(agenda, self.request, actor_name=get_actor_name(self.request))
+        return response
 
 
 class PacienteDeleteView(ClinicaModuloRequiredMixin, DeleteView):

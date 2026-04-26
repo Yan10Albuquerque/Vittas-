@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Clinica
+from .models import Clinica, Colaborador
 
 
 @admin.register(Clinica)
@@ -30,3 +30,20 @@ class ClinicaAdmin(SimpleHistoryAdmin, UserAdmin):
             },
         ),
     )
+
+
+@admin.register(Colaborador)
+class ColaboradorAdmin(SimpleHistoryAdmin, UserAdmin):
+    model = Colaborador
+    ordering = ("nome",)
+    list_display = ("nome", "email", "clinica", "papel", "status", "is_staff", "is_superuser")
+    list_filter = ("papel", "status", "is_staff", "is_superuser", "clinica")
+    search_fields = ("nome", "email", "clinica__nome_fantasia")
+
+    fieldsets = (
+        (None, {"fields": ("clinica", "email", "password")}),
+        ("Dados do colaborador", {"fields": ("nome", "papel")}),
+        ("Status e acesso", {"fields": ("status", "reseta_senha", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Auditoria", {"fields": ("last_login", "uscad", "dtcad", "usalt", "dtalt")}),
+    )
+    readonly_fields = ("last_login", "dtcad", "dtalt")

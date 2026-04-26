@@ -1,5 +1,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
+from base.history import resolve_history_user
 
 # Create your models here.
 
@@ -22,7 +23,7 @@ class Convenio(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.nome
@@ -48,7 +49,7 @@ class Especialidade(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -75,7 +76,7 @@ class FormaPagamento(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -102,7 +103,7 @@ class TipoConsulta(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -130,7 +131,7 @@ class TipoExame(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -157,7 +158,7 @@ class TipoMaterial(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -186,7 +187,7 @@ class StatusAgendamento(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -214,7 +215,7 @@ class StatusAutorizacao(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao
@@ -242,7 +243,7 @@ class StatusProcedimento(models.Model):
   dtcad = models.DateTimeField(auto_now_add=True, verbose_name="Data Cadastro")
   usalt = models.CharField(max_length=25, null=True, blank=True, verbose_name="Usuário Alteração")
   dtalt = models.DateTimeField(auto_now=True, verbose_name="Data Alteração")
-  history = HistoricalRecords()
+  history = HistoricalRecords(get_user=resolve_history_user)
 
   def __str__(self):
     return self.descricao

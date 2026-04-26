@@ -129,6 +129,7 @@
               <th class="text-center">Procedimento</th>
               <th class="text-center">Especialidade</th>
               <th class="text-center">Status</th>
+              <th class="text-center">Fluxo</th>
             </tr>
           </thead>
           <tbody id="consultas" data-role="consultas-body">
@@ -146,7 +147,7 @@
                       {{ consulta.hora|time:"H:i" }}
                     </button>
                   </td>
-                  <td colspan="5" class="text-center font-medium">HORÁRIO BLOQUEADO</td>
+                  <td colspan="6" class="text-center font-medium">HORÁRIO BLOQUEADO</td>
                 </tr>
               {% else %}
                 <tr class="align-middle" data-agenda-id="{{ consulta.id }}" data-status="{{ consulta.status }}" data-paciente-id="{{ consulta.cod_paciente|default:'' }}">
@@ -177,11 +178,51 @@
                       {{ consulta.status_agendamento|default:"-" }}
                     </button>
                   </td>
+                  <td class="text-center">
+                    <div class="flex flex-wrap justify-center gap-1">
+                      {% if consulta.cod_paciente %}
+                      <a href="{{ consulta.prontuario_url }}" class="btn btn-ghost btn-xs">
+                        <i class="fa-solid fa-notes-medical"></i> Prontuário
+                      </a>
+                      <a href="{{ consulta.financeiro_url }}" class="btn btn-outline btn-xs">
+                        <i class="fa-solid fa-wallet"></i> Cobrança
+                      </a>
+                      {% endif %}
+
+                      {% if consulta.pode_iniciar %}
+                      <form method="post" action="{% url 'agenda:agenda_iniciar_atendimento' consulta.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn btn-warning btn-xs">
+                          <i class="fa-solid fa-play"></i> Iniciar
+                        </button>
+                      </form>
+                      {% endif %}
+
+                      {% if consulta.pode_finalizar %}
+                      <form method="post" action="{% url 'agenda:agenda_finalizar_atendimento' consulta.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn btn-success btn-xs">
+                          <i class="fa-solid fa-check"></i> Finalizar
+                        </button>
+                      </form>
+                      {% endif %}
+
+                      {% if consulta.atendimento_ativo %}
+                      <span class="badge badge-warning badge-sm">Em atendimento</span>
+                      {% endif %}
+
+                      {% if consulta.atendimento_finalizado %}
+                      <span class="badge badge-success badge-sm">Atendimento concluído</span>
+                      {% endif %}
+                    </div>
+                  </td>
                 </tr>
               {% endif %}
             {% empty %}
               <tr>
-                <td colspan="6" class="text-center py-6 text-base-content/70" id="agenda_mensagem_vazia" data-role="mensagem-vazia">
+                <td colspan="7" class="text-center py-6 text-base-content/70" id="agenda_mensagem_vazia" data-role="mensagem-vazia">
                   {{ mensagem_tabela }}
                 </td>
               </tr>

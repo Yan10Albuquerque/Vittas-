@@ -15,6 +15,11 @@ def _normalize_status_text(value):
     return (value or "").strip().lower()
 
 
+def _is_status_description(status_obj, *terms):
+    descricao = _normalize_status_text(status_obj.descricao if status_obj else "")
+    return any(term in descricao for term in terms)
+
+
 def is_automatic_status(status_obj):
     if not status_obj:
         return True
@@ -47,12 +52,29 @@ def get_expected_status_for_agenda(consulta, request, next_hora=None):
     now = timezone.localtime()
     start_dt = timezone.make_aware(datetime.combine(consulta.data, consulta.hora))
     end_dt = timezone.make_aware(get_slot_end_datetime(consulta, next_hora))
+    status_atual = consulta.status_agendamento
+    em_andamento_atual = (
+        bool(em_andamento and consulta.status_agendamento_id == em_andamento.pk)
+        or _is_status_description(status_atual, "andamento", "atendimento")
+    )
+    finalizado_atual = (
+        bool(finalizado and consulta.status_agendamento_id == finalizado.pk)
+        or _is_status_description(status_atual, "finaliz", "conclu")
+    )
+
+    if finalizado_atual:
+        return finalizado or status_atual or agendado
+
+    if em_andamento_atual:
+        if now >= end_dt:
+            return finalizado or status_atual or agendado
+        return em_andamento or status_atual or agendado
 
     if now >= end_dt:
-        return finalizado or consulta.status_agendamento or agendado
+        return finalizado or status_atual or agendado
     if now >= start_dt:
-        return em_andamento or consulta.status_agendamento or agendado
-    return agendado or consulta.status_agendamento
+        return em_andamento or status_atual or agendado
+    return agendado or status_atual
 
 
 def sync_agenda_status(consulta, request, next_hora=None, actor_name=None):

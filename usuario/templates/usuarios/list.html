@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Equipe{% endblock %}
+
+{% block content %}
+  <div class="max-w-6xl mx-auto">
+    <div class="vittas-page-header">
+      <div>
+        <h1 class="page-title text-3xl font-semibold">
+          <i class="fa-solid fa-users mr-2"></i>
+          Equipe da Clínica
+        </h1>
+        <p class="text-sm text-base-content/70 mt-2">
+          Gerencie os colaboradores que acessam a clínica com login próprio.
+        </p>
+      </div>
+      <a class="btn btn-primary btn-sm" href="{% url 'usuario:colaborador_create' %}">
+        <i class="fa-solid fa-plus"></i> Novo colaborador
+      </a>
+    </div>
+
+    <div class="alert alert-info shadow-sm mb-4">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>
+        {% if limite_colaboradores %}
+          Plano {{ clinica.get_plano_display }}: {{ total_colaboradores_ativos }}/{{ limite_colaboradores }} colaboradores ativos.
+        {% else %}
+          Plano {{ clinica.get_plano_display }}: colaboradores ilimitados.
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="card bg-base-100 shadow border border-white/10">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Papel</th>
+                <th>Status</th>
+                <th class="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for colaborador in colaboradores %}
+                <tr>
+                  <td>{{ colaborador.nome }}</td>
+                  <td>{{ colaborador.email }}</td>
+                  <td>{{ colaborador.get_papel_display }}</td>
+                  <td>
+                    {% if colaborador.status %}
+                      <span class="badge badge-success badge-sm">Ativo</span>
+                    {% else %}
+                      <span class="badge badge-ghost badge-sm">Inativo</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="flex justify-end gap-2">
+                      <a class="btn btn-ghost btn-sm" href="{% url 'usuario:colaborador_update' colaborador.pk %}">
+                        <i class="fa-solid fa-pen"></i> Editar
+                      </a>
+                      <form method="post" action="{% url 'usuario:colaborador_toggle_status' colaborador.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm {% if colaborador.status %}btn-warning{% else %}btn-success{% endif %}" type="submit">
+                          {% if colaborador.status %}
+                            <i class="fa-solid fa-user-slash"></i> Inativar
+                          {% else %}
+                            <i class="fa-solid fa-user-check"></i> Ativar
+                          {% endif %}
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-base-content/70 py-8">
+                    Nenhum colaborador cadastrado.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
