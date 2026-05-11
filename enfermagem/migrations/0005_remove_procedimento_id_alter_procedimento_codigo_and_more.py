@@ -12,11 +12,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RemoveField(
             model_name="procedimento",
-            name="id",
+            name="codigo",
         ),
         migrations.AlterField(
             model_name="procedimento",
-            name="codigo",
+            name="id",
             field=models.AutoField(
                 editable=False,
                 primary_key=True,

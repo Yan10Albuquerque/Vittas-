@@ -9,10 +9,4 @@ class Migration(migrations.Migration):
         ('enfermagem', '0005_remove_procedimento_id_alter_procedimento_codigo_and_more'),
     ]
 
-    operations = [
-        migrations.RenameField(
-            model_name='procedimento',
-            old_name='codigo',
-            new_name='id',
-        ),
-    ]
+    operations = []
