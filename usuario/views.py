@@ -288,4 +288,8 @@ def alterar_senha_api(request):
 def logout_view(request):
     logout(request)
     _clear_password_reset_user(request)
-    return JsonResponse({"status": "OK", "redirect_url": reverse_lazy("usuario:login")})
+    login_url = reverse_lazy("usuario:login")
+    accepts_html = "text/html" in request.headers.get("accept", "")
+    if accepts_html and request.headers.get("x-requested-with") != "XMLHttpRequest":
+        return redirect(login_url)
+    return JsonResponse({"status": "OK", "redirect_url": login_url})

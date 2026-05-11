@@ -14,17 +14,32 @@ from pathlib import Path
 import os
 from urllib.parse import urlparse
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-def env_bool(name, default=False):
-    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
-
-
 def env_list(name, default=""):
-    raw_value = os.getenv(name, default)
-    return [item.strip() for item in raw_value.split(",") if item.strip()]
+    value = os.getenv(name, default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def is_production_environment():
+    environment = (
+        os.getenv("DJANGO_ENV")
+        or os.getenv("ENVIRONMENT")
+        or os.getenv("ENV")
+        or ""
+    ).strip().lower()
+    return environment in {"production", "prod"} or env_bool("RENDER")
 
 
 def get_postgres_database_config():
@@ -75,7 +90,8 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool("DJANGO_DEBUG", default=False)
+IS_PRODUCTION = is_production_environment()
+DEBUG = not IS_PRODUCTION
 
 
 ALLOWED_HOSTS = env_list(
@@ -145,10 +161,13 @@ WSGI_APPLICATION = "ciil.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-db_engine = os.getenv("DB_ENGINE", "").lower()
-postgres_database = get_postgres_database_config()
+if IS_PRODUCTION:
+    postgres_database = get_postgres_database_config()
+    if not postgres_database:
+        raise ImproperlyConfigured(
+            "Configure DATABASE_URL or PostgreSQL environment variables for production."
+        )
 
-if db_engine in {"postgres", "postgresql"} or postgres_database:
     DATABASES = {
         "default": postgres_database,
     }
