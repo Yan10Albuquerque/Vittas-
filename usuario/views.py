@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -14,6 +14,7 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 from base.tenancy import ClinicaModuloRequiredMixin, get_actor_name, get_clinica_atual
 from .forms import ClinicaForm, ColaboradorForm
 from .models import Clinica, Colaborador
+from .visitante import VISITANTE_SESSION_KEY, modo_visitante_habilitado, obter_clinica_visitante
 
 
 class LoginView(TemplateView):
@@ -23,6 +24,24 @@ class LoginView(TemplateView):
         if getattr(request, "user", None) and request.user.is_authenticated:
             return redirect("usuario:home")
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["modo_visitante_habilitado"] = modo_visitante_habilitado()
+        return context
+
+
+@csrf_protect
+@require_POST
+def entrar_como_visitante(request):
+    if not modo_visitante_habilitado():
+        raise Http404
+
+    clinica = obter_clinica_visitante()
+    _clear_password_reset_user(request)
+    login(request, clinica, backend="usuario.auth_backends.ClinicaAuthBackend")
+    request.session[VISITANTE_SESSION_KEY] = True
+    return redirect("usuario:home")
 
 
 class HomeView(LoginRequiredMixin, TemplateView):
@@ -96,7 +115,6 @@ class ColaboradorListView(EquipeManagementMixin, ListView):
         context = super().get_context_data(**kwargs)
         clinica = self.get_clinica()
         context["clinica"] = clinica
-        context["limite_colaboradores"] = clinica.limite_colaboradores
         context["total_colaboradores_ativos"] = clinica.colaboradores_ativos().count()
         return context
 
@@ -151,15 +169,7 @@ class ColaboradorToggleStatusView(EquipeManagementMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         colaborador = self.get_object()
-        novo_status = not colaborador.status
-        if novo_status and not colaborador.clinica.pode_adicionar_colaborador(colaborador_atual=colaborador):
-            messages.error(
-                request,
-                "O plano Profissional permite até 5 colaboradores ativos.",
-            )
-            return redirect(self.success_url)
-
-        colaborador.status = novo_status
+        colaborador.status = not colaborador.status
         colaborador.usalt = get_actor_name(request)
         colaborador.save(update_fields=["status", "usalt", "dtalt"])
         messages.success(

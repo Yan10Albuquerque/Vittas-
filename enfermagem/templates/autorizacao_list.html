@@ -153,9 +153,12 @@
       <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 rounded">
         Cancelar
       </button>
-      <a id="confirmDeleteLink" class="px-4 py-2 bg-red-600 text-white rounded">
-        Excluir
-      </a>
+      <form id="confirmDeleteForm" method="post">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">
+          Excluir
+        </button>
+      </form>
     </div>
   </div>
 </div>
@@ -292,7 +295,7 @@
 
     const modal = document.getElementById('modal-confirm-delete');
     modal.classList.add('modal-open');
-    document.getElementById('confirmDeleteLink').href = `/enfermagem/${id}/autorizacao-delete/`;
+    document.getElementById('confirmDeleteForm').action = "{% url 'enfermagem:autorizacao_delete' 0 %}".replace('0', id);
   } 
   function closeDeleteModal() {
     const modal = document.getElementById('modal-confirm-delete');

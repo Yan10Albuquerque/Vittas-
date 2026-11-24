@@ -80,10 +80,12 @@
                     Cancelar
                 </button>
 
-                <a id="confirmDeleteLink"
-                    class="px-4 py-2 bg-red-600 text-white rounded">
-                    Excluir
-                </a>
+                <form id="confirmDeleteForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">
+                        Excluir
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -179,7 +181,7 @@
 
     function deleteProcedimento(id) {
         document.getElementById('modal').classList.add('modal-open');
-        document.getElementById('confirmDeleteLink').href = "{% url 'enfermagem:procedimento_delete' 0 %}".replace('0', id);
+        document.getElementById('confirmDeleteForm').action = "{% url 'enfermagem:procedimento_delete' 0 %}".replace('0', id);
     }
     function fecharModal() {
         document.getElementById('modal').classList.remove('modal-open');

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -303,7 +303,3 @@ def cancelar_lancamento(request, pk):
     lancamento.save(update_fields=["status", "usalt", "dtalt"])
     messages.success(request, "Lançamento cancelado com sucesso.")
     return _redirect_back(request, "financeiro:lancamento_list")
-
-
-def vendas (request):
-    return render(request, "financeiro/vendas.html")

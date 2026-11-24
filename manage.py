@@ -3,21 +3,6 @@
 import os
 import sys
 
-# Force PyMySQL to act as MySQLdb before Django imports the DB backend.
-# Django 6 checks for mysqlclient>=2.2.1; we bump the exposed version info so
-# the pure-Python driver passes the check on Railpack images that ship an old
-# mysqlclient.
-try:
-    import pymysql
-
-    pymysql.install_as_MySQLdb()
-    pymysql.__version__ = "2.2.4"
-    pymysql.VERSION = (2, 2, 4, "final", 0)
-    pymysql.version_info = (2, 2, 4, "final", 0)
-except Exception:
-    # If PyMySQL is not installed, Django will error explicitly later.
-    pass
-
 
 def main():
     """Run administrative tasks."""
@@ -31,7 +16,6 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
-
 
 if __name__ == '__main__':
     main()

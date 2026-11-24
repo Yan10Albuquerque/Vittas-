@@ -15,7 +15,6 @@ class MedicoAsyncFlowsTests(TestCase):
             nome_fantasia="Clinica Medico",
             email="medico@clinica.com",
             password="123456",
-            plano=Clinica.Plano.PROFISSIONAL,
         )
         self.client.force_login(self.clinica)
         self.medico = Medico.objects.create(

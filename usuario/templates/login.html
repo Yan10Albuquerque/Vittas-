@@ -4,21 +4,20 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="Acesso exclusivo Vittas">
-		<meta name="author" content="MK Tecnologia">
+		<meta name="description" content="Vittas - sistema de gestão para clínicas médicas">
 		<meta name="robots" content="noindex, nofollow">
-		<title>Vittas | Acesso Restrito</title>
+		<title>Vittas | Entrar</title>
 
 		<link rel="apple-touch-icon" href="{% static 'img/vittas-ico.png' %}">
 		<link rel="shortcut icon" href="{% static 'img/vittas-ico.png' %}">
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css">
 		<link rel="stylesheet" href="{% static 'css/winter.css' %}">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-		<script src="https://cdn.tailwindcss.com"></script>
-		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 		<style>[x-cloak]{display:none !important;}</style>
 	</head>
 	<body class="min-h-screen bg-base-200 text-base-content" x-data="loginForm()" x-cloak>
@@ -30,21 +29,21 @@
 			<div class="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center relative z-10">
 				<section class="hidden lg:block pr-8">
 					<div class="vittas-eyebrow mb-6">
-						<i class="fa-solid fa-sparkles"></i>
-						Solução ideal para clínicas modernas
+						<i class="fa-solid fa-code"></i>
+						Projeto de portfólio
 					</div>
 					<h1 class="hero-title text-6xl leading-[0.95] mb-6">
-						Sua clínica no
-						<span class="text-primary">controle total</span>,
-						do agendamento ao financeiro
+						Gestão de clínicas,
+						<span class="text-primary">do agendamento</span>
+						ao financeiro
 					</h1>
 					<p class="max-w-xl text-xl leading-9 text-base-content/70">
-						Automatize processos, organize sua agenda e tenha uma visão clara de toda a operação com a experiência visual do Vittas.
+						Sistema web multi-clínica com agenda médica, pacientes, enfermagem e financeiro, desenvolvido com Django, Tailwind CSS e Alpine.js.
 					</p>
 					<div class="mt-8 flex flex-wrap gap-6 text-base-content/60">
-						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>Sem instalação</span>
-						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>7 dias grátis</span>
-						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>Suporte humano</span>
+						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>Multi-clínica</span>
+						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>Permissões por perfil</span>
+						<span><i class="fa-solid fa-circle-check text-primary mr-2"></i>Histórico de auditoria</span>
 					</div>
 				</section>
 				<div class="card w-full max-w-md justify-self-center bg-base-100 shadow-xl border border-white/10">
@@ -53,11 +52,11 @@
 						<div class="text-center space-y-3 mb-2">
 							<div class="vittas-eyebrow mx-auto w-fit">
 								<i class="fa-solid fa-lock"></i>
-								Acesso Restrito
+								Entrar
 							</div>
 							<img class="mx-auto" src="{% static 'img/vittasNavBlack.png' %}" width="250" alt="Logo Vittas"
-								title="Vittas - Gestão para Clínicas de Estética">
-							<p class="text-sm text-base-content/60">Entre para acessar sua operação clínica com a nova identidade Vittas.</p>
+								title="Vittas - Gestão para Clínicas">
+							<p class="text-sm text-base-content/60">Acesse com sua conta ou explore o sistema como visitante.</p>
 						</div>
 					<form class="space-y-4" @submit.prevent="submitLogin">
 						{% csrf_token %}
@@ -104,6 +103,20 @@
 							</button>
 						</div>
 					</form>
+
+					{% if modo_visitante_habilitado %}
+					<div class="divider text-xs text-base-content/50 my-2">OU</div>
+					<form method="post" action="{% url 'usuario:visitante' %}" class="space-y-2">
+						{% csrf_token %}
+						<button class="btn btn-outline btn-primary w-full h-12" type="submit" id="entrar_visitante">
+							<i class="fa-solid fa-eye"></i>
+							Entrar como visitante
+						</button>
+						<p class="text-xs text-center text-base-content/60">
+							Explore uma clínica de demonstração com dados fictícios, sem cadastro. Somente leitura.
+						</p>
+					</form>
+					{% endif %}
 				</div>
 				<div class="card-footer p-6 pt-0">
 					<a class="btn btn-ghost btn-sm w-full text-base-content/60" href="#" id="resetar_senha" @click.prevent="alertReset">Esqueci minha senha</a>

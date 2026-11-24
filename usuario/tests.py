@@ -1,7 +1,13 @@
-from django.test import TestCase
+from io import StringIO
+
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from base.models import Convenio
+from paciente.models import Paciente
 from usuario.models import Clinica, Colaborador
+from usuario.visitante import VISITANTE_EMAIL, VISITANTE_SESSION_KEY
 
 
 class ClinicaAuthFlowTests(TestCase):
@@ -10,20 +16,17 @@ class ClinicaAuthFlowTests(TestCase):
             nome_fantasia="Clinica Auth",
             email="clinica@auth.com",
             password="Senha@123",
-            plano=Clinica.Plano.PROFISSIONAL,
         )
         self.clinica_expirada = Clinica.objects.create_user(
             nome_fantasia="Clinica Expirada",
             email="expirada@clinica.com",
             password="Senha@123",
-            plano=Clinica.Plano.PROFISSIONAL,
             reseta_senha=True,
         )
         self.clinica_inativa = Clinica.objects.create_user(
             nome_fantasia="Clinica Inativa",
             email="inativa@clinica.com",
             password="Senha@123",
-            plano=Clinica.Plano.PROFISSIONAL,
             status=False,
         )
         self.admin_colaborador = Colaborador.objects.create_user(
@@ -99,7 +102,6 @@ class ClinicaAuthFlowTests(TestCase):
             nome_fantasia="Clinica Secundaria",
             email="compartilhado@demo.com",
             password="SenhaClinica@123",
-            plano=Clinica.Plano.BASICO,
         )
         colaborador = Colaborador.objects.create_user(
             clinica=clinica_secundaria,
@@ -142,47 +144,9 @@ class ClinicaAuthFlowTests(TestCase):
         self.assertEqual(home_response.status_code, 200)
         self.assertEqual(perfil_response.status_code, 200)
 
-    def test_plano_basico_libera_todos_os_modulos(self):
-        clinica = Clinica.objects.create_user(
-            nome_fantasia="Clinica Basica",
-            email="basica@clinica.com",
-            password="Senha@123",
-            plano=Clinica.Plano.BASICO,
-        )
-
-        self.assertTrue(clinica.modulo_disponivel("pacientes"))
-        self.assertTrue(clinica.modulo_disponivel("agenda"))
-        self.assertTrue(clinica.modulo_disponivel("cadastros"))
-        self.assertTrue(clinica.modulo_disponivel("configuracoes"))
-        self.assertTrue(clinica.modulo_disponivel("financeiro"))
-        self.assertTrue(clinica.modulo_disponivel("enfermagem"))
-
-    def test_plano_profissional_nao_libera_enfermagem(self):
-        clinica = Clinica.objects.create_user(
-            nome_fantasia="Clinica Profissional",
-            email="profissional@clinica.com",
-            password="Senha@123",
-            plano=Clinica.Plano.PROFISSIONAL,
-        )
-
-        self.assertTrue(clinica.modulo_disponivel("pacientes"))
-        self.assertTrue(clinica.modulo_disponivel("agenda"))
-        self.assertTrue(clinica.modulo_disponivel("cadastros"))
-        self.assertTrue(clinica.modulo_disponivel("configuracoes"))
-        self.assertTrue(clinica.modulo_disponivel("financeiro"))
-        self.assertFalse(clinica.modulo_disponivel("enfermagem"))
-
-    def test_plano_pro_legado_equivale_a_enterprise(self):
-        clinica = Clinica.objects.create_user(
-            nome_fantasia="Clinica Legada",
-            email="legada@clinica.com",
-            password="Senha@123",
-            plano="PRO",
-        )
-
-        self.assertEqual(clinica.plano_normalizado, Clinica.Plano.ENTERPRISE)
-        self.assertTrue(clinica.modulo_disponivel("enfermagem"))
-        self.assertTrue(clinica.modulo_disponivel("financeiro"))
+    def test_clinica_tem_acesso_a_todos_os_modulos(self):
+        for modulo in ("pacientes", "agenda", "cadastros", "configuracoes", "financeiro", "enfermagem"):
+            self.assertTrue(self.clinica.modulo_disponivel(modulo))
 
     def test_colaborador_admin_pode_gerenciar_equipe(self):
         self.client.force_login(
@@ -213,7 +177,7 @@ class ClinicaAuthFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("usuario:home"))
 
-    def test_mensagem_de_bloqueio_diferencia_plano_de_perfil(self):
+    def test_mensagem_de_bloqueio_por_perfil(self):
         recepcao = Colaborador.objects.create_user(
             clinica=self.clinica,
             nome="Perfil Restrito",
@@ -231,8 +195,8 @@ class ClinicaAuthFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Seu perfil não possui permissão para acessar o módulo Financeiro.")
 
-    def test_plano_profissional_limita_a_cinco_colaboradores_ativos(self):
-        for indice in range(2, 6):
+    def test_clinica_nao_tem_limite_de_colaboradores(self):
+        for indice in range(2, 8):
             Colaborador.objects.create_user(
                 clinica=self.clinica,
                 nome=f"Colaborador {indice}",
@@ -254,27 +218,8 @@ class ClinicaAuthFlowTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "5 colaboradores ativos")
-        self.assertFalse(Colaborador.objects.filter(email="carla@clinica.com").exists())
-
-    def test_plano_basico_nao_tem_limite_de_colaboradores(self):
-        clinica = Clinica.objects.create_user(
-            nome_fantasia="Clinica Basica Colaboradores",
-            email="basica2@clinica.com",
-            password="Senha@123",
-            plano=Clinica.Plano.BASICO,
-        )
-        for indice in range(3):
-            Colaborador.objects.create_user(
-                clinica=clinica,
-                nome=f"Colaborador {indice}",
-                email=f"col{indice}@basica.com",
-                password="Senha@123",
-                papel=Colaborador.Papel.RECEPCAO,
-            )
-
-        self.assertEqual(clinica.colaboradores_ativos().count(), 3)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Colaborador.objects.filter(email="carla@clinica.com").exists())
 
     def test_perfil_medico_tem_acesso_apenas_a_consultas(self):
         medico = Colaborador.objects.create_user(
@@ -366,3 +311,129 @@ class ClinicaAuthFlowTests(TestCase):
         self.assertEqual(colaborador.modulos_permitidos, [])
         self.assertFalse(colaborador.modulo_disponivel("agenda"))
         self.assertFalse(colaborador.modulo_disponivel("pacientes"))
+
+
+class SeedDemoDataCommandTests(TestCase):
+    def _run_seed(self, **options):
+        call_command("seed_demo_data", stdout=StringIO(), **options)
+
+    def test_cria_clinica_informada_quando_nao_existe(self):
+        Clinica.objects.create_user(
+            nome_fantasia="Clinica Existente",
+            email="existente@clinica.com",
+            password="Senha@123",
+        )
+
+        self._run_seed(clinic_email="demo@vittas.com", create_clinic_if_missing=True)
+
+        clinica = Clinica.objects.get(email="demo@vittas.com")
+        self.assertTrue(clinica.check_password("Demo@123"))
+        self.assertTrue(clinica.pacientes.exists())
+        self.assertFalse(Clinica.objects.get(email="existente@clinica.com").pacientes.exists())
+
+    def test_nao_cria_clinica_informada_sem_flag(self):
+        self._run_seed(clinic_email="naoexiste@vittas.com")
+
+        self.assertFalse(Clinica.objects.filter(email="naoexiste@vittas.com").exists())
+
+
+class ModoVisitanteTests(TestCase):
+    def _entrar_como_visitante(self):
+        return self.client.post(reverse("usuario:visitante"))
+
+    def test_login_exibe_botao_de_visitante(self):
+        response = self.client.get(reverse("usuario:login"))
+
+        self.assertContains(response, "Entrar como visitante")
+
+    def test_entrar_como_visitante_cria_clinica_demo_populada(self):
+        response = self._entrar_como_visitante()
+
+        self.assertRedirects(response, reverse("usuario:home"))
+        self.assertTrue(self.client.session.get(VISITANTE_SESSION_KEY))
+        clinica = Clinica.objects.get(email=VISITANTE_EMAIL)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), clinica.pk)
+        self.assertTrue(clinica.pacientes.exists())
+
+        home = self.client.get(reverse("usuario:home"))
+        self.assertContains(home, "Modo visitante.")
+
+    def test_clinica_visitante_nao_aceita_login_por_senha(self):
+        self._entrar_como_visitante()
+        self.client.logout()
+        clinica = Clinica.objects.get(email=VISITANTE_EMAIL)
+
+        self.assertFalse(clinica.has_usable_password())
+        self.assertFalse(
+            any(colaborador.has_usable_password() for colaborador in clinica.colaboradores.all())
+        )
+        response = self.client.post(
+            reverse("usuario:login_api"),
+            {"email": "demo1.%d@vittas.com" % clinica.pk, "senha": "Demo@123"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_visitante_navega_pelos_modulos(self):
+        self._entrar_como_visitante()
+
+        for nome_url in (
+            "usuario:home",
+            "agenda:agenda_consultas",
+            "paciente:paciente_list",
+            "financeiro:dashboard",
+            "enfermagem:autorizacao_list",
+            "usuario:colaborador_list",
+        ):
+            with self.subTest(nome_url=nome_url):
+                self.assertEqual(self.client.get(reverse(nome_url)).status_code, 200)
+
+    def test_visitante_nao_altera_dados_via_formulario(self):
+        self._entrar_como_visitante()
+        total_antes = Paciente.objects.count()
+
+        response = self.client.post(
+            reverse("paciente:paciente_create"),
+            {"nome": "Paciente Visitante"},
+            HTTP_ACCEPT="text/html",
+            follow=True,
+        )
+
+        self.assertEqual(Paciente.objects.count(), total_antes)
+        self.assertContains(response, "Modo visitante: esta é uma demonstração somente leitura")
+
+    def test_visitante_nao_altera_dados_via_ajax(self):
+        self._entrar_como_visitante()
+        convenio = Convenio.objects.filter(clinica__email=VISITANTE_EMAIL).first()
+
+        response = self.client.post(
+            reverse("base:convenio_delete", args=[convenio.pk]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(response.json()["modo_visitante"])
+        self.assertTrue(Convenio.objects.filter(pk=convenio.pk).exists())
+
+    def test_visitante_pode_consultar_dados_por_post_de_leitura(self):
+        self._entrar_como_visitante()
+        paciente = Paciente.objects.filter(clinica__email=VISITANTE_EMAIL).first()
+
+        response = self.client.post(
+            reverse("paciente:paciente_api"),
+            {"funcao": "buscar_dados", "cod_paciente": paciente.pk},
+        )
+
+        self.assertNotEqual(response.status_code, 403)
+
+    def test_visitante_pode_sair(self):
+        self._entrar_como_visitante()
+
+        response = self.client.post(reverse("usuario:logout_api"), HTTP_ACCEPT="text/html")
+
+        self.assertRedirects(response, reverse("usuario:login"))
+        self.assertNotIn(VISITANTE_SESSION_KEY, self.client.session)
+
+    @override_settings(MODO_VISITANTE_HABILITADO=False)
+    def test_modo_visitante_desabilitado(self):
+        self.assertNotContains(self.client.get(reverse("usuario:login")), "Entrar como visitante")
+        self.assertEqual(self._entrar_como_visitante().status_code, 404)

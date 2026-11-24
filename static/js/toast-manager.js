@@ -185,11 +185,11 @@ window.confirmDialogManager = function () {
           }
         });
 
-        if (!response.ok) {
-          throw new Error('Erro na requisição');
-        }
+        const data = await response.json().catch(() => ({}));
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Erro na requisição');
+        }
         
         if (data.success) {
           if (this.$refs.confirmModal) {

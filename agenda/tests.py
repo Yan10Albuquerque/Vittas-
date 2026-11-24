@@ -18,7 +18,6 @@ class AgendaModuleTests(TestCase):
             nome_fantasia="Clinica Agenda",
             email="agenda@clinica.com",
             password="123456",
-            plano=Clinica.Plano.PROFISSIONAL,
         )
         self.client.force_login(self.clinica)
 

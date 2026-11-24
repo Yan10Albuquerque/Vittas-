@@ -22,11 +22,7 @@
     <div class="alert alert-info shadow-sm mb-4">
       <i class="fa-solid fa-circle-info"></i>
       <span>
-        {% if limite_colaboradores %}
-          Plano {{ clinica.get_plano_display }}: {{ total_colaboradores_ativos }}/{{ limite_colaboradores }} colaboradores ativos.
-        {% else %}
-          Plano {{ clinica.get_plano_display }}: colaboradores ilimitados.
-        {% endif %}
+        {{ total_colaboradores_ativos }} colaborador{{ total_colaboradores_ativos|pluralize:"es" }} ativo{{ total_colaboradores_ativos|pluralize }}.
       </span>
     </div>
 

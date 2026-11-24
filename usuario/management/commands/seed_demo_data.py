@@ -14,6 +14,7 @@ from paciente.models import Paciente, PacienteVacina
 from usuario.models import Clinica, Colaborador
 
 
+DEMO_CLINIC_EMAIL = "demo@vittas.com"
 DEMO_PASSWORD = "Demo@123"
 DEMO_ACTOR = "seed_demo_data"
 
@@ -31,7 +32,10 @@ class Command(BaseCommand):
             "--create-clinic-if-missing",
             action="store_true",
             dest="create_clinic_if_missing",
-            help="Cria uma clínica de demonstração caso nenhuma clínica ativa seja encontrada.",
+            help=(
+                "Cria uma clínica de demonstração caso nenhuma clínica ativa seja encontrada "
+                "(ou, junto com --clinic-email, caso a clínica informada não exista)."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -57,7 +61,11 @@ class Command(BaseCommand):
     def _get_target_clinics(self, clinic_email=None, create_clinic_if_missing=False):
         if clinic_email:
             clinica = Clinica.objects.filter(email__iexact=clinic_email, status=True).first()
-            return [clinica] if clinica else []
+            if clinica:
+                return [clinica]
+            if not create_clinic_if_missing:
+                return []
+            return [self._create_demo_clinic(clinic_email)]
 
         clinicas = list(Clinica.objects.filter(status=True).order_by("id"))
         if clinicas:
@@ -66,16 +74,17 @@ class Command(BaseCommand):
         if not create_clinic_if_missing:
             return []
 
-        clinica = Clinica.objects.create_user(
+        return [self._create_demo_clinic(DEMO_CLINIC_EMAIL)]
+
+    def _create_demo_clinic(self, email):
+        return Clinica.objects.create_user(
             nome_fantasia="Clinica Demo Vittas",
-            email="demo@vittas.com",
+            email=email,
             password=DEMO_PASSWORD,
-            plano=Clinica.Plano.ENTERPRISE,
             telefone="(11) 4000-1000",
             uscad=DEMO_ACTOR,
             usalt=DEMO_ACTOR,
         )
-        return [clinica]
 
     def _seed_clinic(self, clinica):
         hoje = timezone.localdate()
@@ -386,13 +395,12 @@ class Command(BaseCommand):
         }
 
     def _ensure_colaboradores(self, clinica):
-        limite = clinica.limite_colaboradores or 4
         perfis = [
             ("Administrador Demo", "ADMIN"),
             ("Recepção Demo", "RECEPCAO"),
             ("Financeiro Demo", "FINANCEIRO"),
             ("Enfermagem Demo", "ENFERMAGEM"),
-        ][:limite]
+        ]
 
         for indice, (nome, papel) in enumerate(perfis, start=1):
             colaborador, created = Colaborador.objects.get_or_create(

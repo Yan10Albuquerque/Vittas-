@@ -10,14 +10,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css">
     <link rel="stylesheet" href="{% static 'css/winter.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
     <style>[x-cloak]{display:none !important;}</style>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
     <script src="{% static 'js/toast-manager.js' %}"></script>
     {% block extra_head %}{% endblock %}
   </head>
@@ -25,6 +25,21 @@
     {% include "menu.html" %}
     <main class="px-3 pb-10 pt-24 sm:px-4 lg:px-6">
       <div class="mx-auto flex w-full max-w-[1440px] flex-col gap-6">
+      {% if modo_visitante %}
+        <div class="alert alert-info shadow-sm" role="status" data-modo-visitante>
+          <i class="fa-solid fa-eye"></i>
+          <span>
+            <strong>Modo visitante.</strong>
+            Você está explorando uma clínica de demonstração com dados fictícios. Navegue à vontade: as alterações estão desabilitadas.
+          </span>
+          <form method="post" action="{% url 'usuario:logout_api' %}" data-logout-form>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm">
+              <i class="fa-solid fa-right-from-bracket"></i> Sair do modo visitante
+            </button>
+          </form>
+        </div>
+      {% endif %}
       {% if messages %}
         <div class="flex flex-col gap-2">
           {% for message in messages %}
@@ -51,8 +66,25 @@
     {% include "includes/toast.html" %}
     {% include "includes/confirm_dialog.html" %}
     
-    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
     <script src="{% static 'js/base.js' %}"></script>
+    {% if modo_visitante %}
+    <script>
+      // Modo visitante: barra envios de formulário no navegador com um aviso amigável.
+      // A proteção real fica no servidor (usuario.middleware.ModoVisitanteMiddleware).
+      document.addEventListener("submit", (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if ((form.getAttribute("method") || "get").toLowerCase() !== "post") return;
+        if (form.hasAttribute("data-logout-form")) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.dispatchEvent(new CustomEvent("show-toast", {
+          detail: { type: "warning", message: "{{ mensagem_modo_visitante|escapejs }}" },
+        }));
+      }, true);
+    </script>
+    {% endif %}
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>

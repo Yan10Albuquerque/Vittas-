@@ -19,15 +19,15 @@
 
     <div class="hidden lg:flex flex-1 justify-center px-4">
       <ul class="menu menu-horizontal z-50 flex-nowrap items-center gap-1 px-1 text-base-content whitespace-nowrap">
-        {% if modulos_plano.pacientes %}
+        {% if modulos_liberados.pacientes %}
         <li><a href="{% url 'paciente:paciente_list' %}" title="Pacientes"><i class="fa-solid fa-id-card-clip"></i>
             Pacientes</a></li>
         {% endif %}
-        {% if modulos_plano.agenda %}
+        {% if modulos_liberados.agenda %}
         <li><a href="{% url 'agenda:agenda_consultas' %}" title="Agenda de Consultas"><i
               class="fa-solid fa-stethoscope"></i> Consultas</a></li>
         {% endif %}
-        {% if modulos_plano.financeiro %}
+        {% if modulos_liberados.financeiro %}
         <li>
           <details>
             <summary><i class="fa-solid fa-dollar-sign"></i> Financeiro</summary>
@@ -41,7 +41,7 @@
         </li>
         {% endif %}
 
-        {% if modulos_plano.enfermagem %}
+        {% if modulos_liberados.enfermagem %}
         <li>
           <details>
             <summary><i class="fa-solid fa-user-nurse"></i> Enfermagem</summary>
@@ -62,7 +62,7 @@
           <details>
             <summary><i class="fa-solid fa-gear"></i> Configurações</summary>
             <ul class="p-2 bg-base-100 w-64 shadow rounded-box z-[1]">
-              {% if modulos_plano.cadastros %}
+              {% if modulos_liberados.cadastros %}
               <li><a href="{% url 'base:convenio_list' %}"><i class="fa-solid fa-hand-holding-heart fa-fw"></i>
                   Convênios</a></li>
               <li><a href="{% url 'base:forma_pagamento_list' %}"><i class="fa-solid fa-money-check-dollar fa-fw"></i>
@@ -130,15 +130,15 @@
   @click.outside="mobileMenuOpen = false"
   x-cloak>
   <ul class="menu gap-1 p-4">
-    {% if modulos_plano.pacientes %}
+    {% if modulos_liberados.pacientes %}
     <li><a href="{% url 'paciente:paciente_list' %}" title="Pacientes"><i class="fa-solid fa-id-card-clip"></i>
         Pacientes</a></li>
     {% endif %}
-    {% if modulos_plano.agenda %}
+    {% if modulos_liberados.agenda %}
     <li><a href="{% url 'agenda:agenda_consultas' %}" title="Agenda"><i class="fa-solid fa-stethoscope"></i> Agenda</a>
     </li>
     {% endif %}
-    {% if modulos_plano.financeiro %}
+    {% if modulos_liberados.financeiro %}
     <li>
       <details>
         <summary><i class="fa-solid fa-dollar-sign"></i> Financeiro</summary>
@@ -150,7 +150,7 @@
       </details>
     </li>
     {% endif %}
-    {% if modulos_plano.enfermagem %}
+    {% if modulos_liberados.enfermagem %}
     <li>
       <details>
         <summary><i class="fa-solid fa-user-nurse"></i> Enfermagem</summary>
@@ -162,7 +162,7 @@
       </details>
     </li>
     {% endif %}
-    {% if modulos_plano.cadastros %}
+    {% if modulos_liberados.cadastros %}
     <li><a href="{% url 'medico:medico_list' %}" title="Cadastro de Médicos"><i class="fa-solid fa-user-doctor"></i>
         Cadastro de Médicos</a></li>
     <li><a href="{% url 'base:status_agendamento_list' %}" title="Status de Agendamento"><i

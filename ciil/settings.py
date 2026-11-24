@@ -134,6 +134,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "usuario.middleware.ModoVisitanteMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -255,6 +256,10 @@ AUTHENTICATION_BACKENDS = [
     "usuario.auth_backends.ClinicaAuthBackend",
     "usuario.auth_backends.ColaboradorAuthBackend",
 ]
+
+# Modo visitante: botão "Entrar como visitante" no login, com acesso somente leitura
+# a uma clínica de demonstração. Desative com DJANGO_MODO_VISITANTE=false.
+MODO_VISITANTE_HABILITADO = env_bool("DJANGO_MODO_VISITANTE", True)
 
 LOGIN_REDIRECT_URL = "/home/"
 LOGIN_URL = "/login/"

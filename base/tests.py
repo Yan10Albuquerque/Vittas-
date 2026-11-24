@@ -12,7 +12,6 @@ class StatusAgendamentoCrudTests(TestCase):
             nome_fantasia="Clinica Base",
             email="base@clinica.com",
             password="123456",
-            plano=Clinica.Plano.BASICO,
         )
         self.client.force_login(self.clinica)
 
@@ -42,7 +41,6 @@ class StatusAgendamentoCrudTests(TestCase):
             nome_fantasia="Clinica Seed",
             email="seed@clinica.com",
             password="123456",
-            plano=Clinica.Plano.BASICO,
         )
 
         statuses = StatusAgendamento.objects.filter(clinica=clinica).order_by("nivel", "descricao")

@@ -49,7 +49,7 @@ def get_actor_name(request):
     return getattr(user, "email", "") or getattr(user, "nome_exibicao", "") or f"user-{user.pk}"
 
 
-def plano_libera_modulo(request, modulo):
+def modulo_liberado(request, modulo):
     if getattr(request.user, "is_superuser", False):
         return True
 
@@ -73,9 +73,6 @@ def get_modulo_bloqueado_message(request, modulo):
     if not clinica or not clinica.status:
         return "A clínica vinculada a este acesso está inativa."
 
-    if not clinica.modulo_disponivel(modulo):
-        return f"O plano da clínica não libera o módulo {modulo_label}."
-
     return f"Seu perfil não possui permissão para acessar o módulo {modulo_label}."
 
 
@@ -83,7 +80,7 @@ class ClinicaModuloRequiredMixin(LoginRequiredMixin):
     modulo_requerido = None
 
     def dispatch(self, request, *args, **kwargs):
-        if self.modulo_requerido and not plano_libera_modulo(request, self.modulo_requerido):
+        if self.modulo_requerido and not modulo_liberado(request, self.modulo_requerido):
             messages.error(request, get_modulo_bloqueado_message(request, self.modulo_requerido))
             return redirect("usuario:home")
         return super().dispatch(request, *args, **kwargs)
@@ -97,7 +94,7 @@ def modulo_requerido(modulo):
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            if not plano_libera_modulo(request, modulo):
+            if not modulo_liberado(request, modulo):
                 messages.error(request, get_modulo_bloqueado_message(request, modulo))
                 return redirect("usuario:home")
             return view_func(request, *args, **kwargs)

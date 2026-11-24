@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from base.tenancy import filtrar_por_clinica, get_clinica_atual, modulo_requerido
 from .models import AgendaEnfermagem, Autorizacao, Paciente, Procedimento
@@ -103,6 +104,7 @@ def NovaAutorizacaoView(request):
 
 
 @login_required
+@require_POST
 @modulo_requerido("enfermagem")
 def AutorizacaoDeleteView(request, pk):
     autorizacao = None
@@ -228,6 +230,7 @@ def ProcedimentoUpdateView(request, pk):
 
 
 @login_required
+@require_POST
 @modulo_requerido("enfermagem")
 def ProcedimentoDeleteView(request, pk):
     procedimento = None

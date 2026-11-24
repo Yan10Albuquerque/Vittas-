@@ -9,6 +9,7 @@ from .views import (
     HomeView,
     LoginView,
     alterar_senha_api,
+    entrar_como_visitante,
     login_api,
     logout_view,
 )
@@ -24,6 +25,7 @@ urlpatterns = [
     path("equipe/novo/", ColaboradorCreateView.as_view(), name="colaborador_create"),
     path("equipe/<int:pk>/editar/", ColaboradorUpdateView.as_view(), name="colaborador_update"),
     path("equipe/<int:pk>/status/", ColaboradorToggleStatusView.as_view(), name="colaborador_toggle_status"),
+    path("visitante/", entrar_como_visitante, name="visitante"),
     path("api/login/", login_api, name="login_api"),
     path("api/alterar-senha/", alterar_senha_api, name="alterar_senha_api"),
     path("api/logout/", logout_view, name="logout_api"),

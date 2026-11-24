@@ -59,14 +59,6 @@
             {{ form.password.errors }}
           </div>
 
-          {% if form.plano %}
-            <div class="form-control col-span-12 md:col-span-4">
-              <label class="label"><span class="label-text">Plano</span></label>
-              {{ form.plano }}
-              {{ form.plano.errors }}
-            </div>
-          {% endif %}
-
           {% if form.status %}
             <div class="form-control col-span-12 md:col-span-3">
               <label class="label"><span class="label-text">Status</span></label>
@@ -88,11 +80,6 @@
               {{ form.reseta_senha.errors }}
             </div>
           {% endif %}
-        </div>
-
-        <div class="alert alert-info shadow-sm mt-4">
-          <i class="fa-solid fa-circle-info"></i>
-          <span>Plano Profissional libera pacientes, agenda e financeiro. Plano Enterprise libera também enfermagem.</span>
         </div>
 
         {% if object %}

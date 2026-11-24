@@ -40,49 +40,12 @@ class ClinicaManager(BaseUserManager):
 
 
 class Clinica(AbstractBaseUser, PermissionsMixin):
-    class Plano(models.TextChoices):
-        BASICO = "BASICO", "Básico"
-        PROFISSIONAL = "PROFISSIONAL", "Profissional"
-        ENTERPRISE = "ENTERPRISE", "Enterprise"
-
-    MODULOS_POR_PLANO = {
-        Plano.BASICO: {
-            "pacientes",
-            "agenda",
-            "cadastros",
-            "configuracoes",
-            "enfermagem",
-            "financeiro",
-        },
-        Plano.PROFISSIONAL: {
-            "pacientes",
-            "agenda",
-            "cadastros",
-            "configuracoes",
-            "financeiro",
-        },
-        Plano.ENTERPRISE: {
-            "pacientes",
-            "agenda",
-            "cadastros",
-            "configuracoes",
-            "enfermagem",
-            "financeiro",
-        },
-    }
-
     nome_fantasia = models.CharField(max_length=80, verbose_name="Nome Fantasia")
     password = models.CharField(max_length=128, default="", verbose_name="password")
     razao_social = models.CharField(max_length=120, null=True, blank=True, verbose_name="Razão Social")
     cnpj = models.CharField(max_length=18, null=True, blank=True, unique=True, verbose_name="CNPJ")
     email = models.EmailField(max_length=100, unique=True, null=True, blank=True, verbose_name="Email")
     telefone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Telefone")
-    plano = models.CharField(
-        max_length=20,
-        choices=Plano.choices,
-        default=Plano.BASICO,
-        verbose_name="Plano",
-    )
     status = models.BooleanField(default=True, verbose_name="Ativa")
     is_staff = models.BooleanField(default=False, verbose_name="Acesso ao Admin")
     reseta_senha = models.BooleanField(default=False, verbose_name="Forçar Redefinição de Senha")
@@ -131,14 +94,10 @@ class Clinica(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.nome_fantasia
 
-    @property
-    def plano_normalizado(self):
-        if self.plano == "PRO":
-            return self.Plano.ENTERPRISE
-        return self.plano
-
     def modulo_disponivel(self, modulo):
-        return modulo in self.MODULOS_POR_PLANO.get(self.plano_normalizado, set())
+        from base.tenancy import MODULO_LABELS
+
+        return modulo in MODULO_LABELS
 
     @property
     def nome_exibicao(self):
@@ -152,23 +111,8 @@ class Clinica(AbstractBaseUser, PermissionsMixin):
     def pode_gerenciar_equipe(self):
         return True
 
-    @property
-    def limite_colaboradores(self):
-        if self.plano_normalizado == self.Plano.PROFISSIONAL:
-            return 5
-        return None
-
     def colaboradores_ativos(self):
         return self.colaboradores.filter(status=True)
-
-    def pode_adicionar_colaborador(self, colaborador_atual=None):
-        limite = self.limite_colaboradores
-        if limite is None:
-            return True
-        ativos = self.colaboradores_ativos()
-        if colaborador_atual and colaborador_atual.pk:
-            ativos = ativos.exclude(pk=colaborador_atual.pk)
-        return ativos.count() < limite
 
 
 class ColaboradorManager(BaseUserManager):

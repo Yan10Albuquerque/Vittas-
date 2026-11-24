@@ -20,7 +20,6 @@ class PacienteModuleTests(TestCase):
             nome_fantasia="Clinica Paciente",
             email="paciente@clinica.com",
             password="123456",
-            plano=Clinica.Plano.PROFISSIONAL,
         )
         self.client.force_login(self.clinica)
 

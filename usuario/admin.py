@@ -9,13 +9,13 @@ from .models import Clinica, Colaborador
 class ClinicaAdmin(SimpleHistoryAdmin, UserAdmin):
     model = Clinica
     ordering = ("nome_fantasia",)
-    list_display = ("nome_fantasia", "email", "plano", "status", "is_staff", "is_superuser")
-    list_filter = ("plano", "status", "is_staff", "is_superuser")
+    list_display = ("nome_fantasia", "email", "status", "is_staff", "is_superuser")
+    list_filter = ("status", "is_staff", "is_superuser")
     search_fields = ("nome_fantasia", "razao_social", "email", "cnpj")
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Dados da clínica", {"fields": ("nome_fantasia", "razao_social", "cnpj", "telefone", "plano")}),
+        ("Dados da clínica", {"fields": ("nome_fantasia", "razao_social", "cnpj", "telefone")}),
         ("Status e acesso", {"fields": ("status", "reseta_senha", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Auditoria", {"fields": ("last_login", "uscad", "dtcad", "usalt", "dtalt")}),
     )
@@ -26,7 +26,7 @@ class ClinicaAdmin(SimpleHistoryAdmin, UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "nome_fantasia", "plano", "password1", "password2", "status", "is_staff"),
+                "fields": ("email", "nome_fantasia", "password1", "password2", "status", "is_staff"),
             },
         ),
     )

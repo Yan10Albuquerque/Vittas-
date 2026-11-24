@@ -18,7 +18,6 @@ class FinanceiroModuleTest(TestCase):
             nome_fantasia="Clinica Financeira",
             email="financeiro@clinica.com",
             password="123456",
-            plano=Clinica.Plano.PROFISSIONAL,
         )
         self.client.force_login(self.clinica)
         self.factory = RequestFactory()

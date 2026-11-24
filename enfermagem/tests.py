@@ -16,7 +16,6 @@ class AgendaEnfermagemRulesTest(TestCase):
             nome_fantasia="Clinica Teste",
             email="teste@clinica.com",
             password="123456",
-            plano=Clinica.Plano.ENTERPRISE,
         )
         self.client.force_login(self.clinica)
         self.paciente = Paciente.objects.create(
@@ -173,7 +172,7 @@ class AgendaEnfermagemRulesTest(TestCase):
             hora_agendamento="09:00",
         )
 
-        response = self.client.get(
+        response = self.client.post(
             reverse("enfermagem:autorizacao_delete", args=[self.autorizacao.pk]),
         )
 

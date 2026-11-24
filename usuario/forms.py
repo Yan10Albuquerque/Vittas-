@@ -33,11 +33,6 @@ class ClinicaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.user and self.user.is_superuser:
-            self.fields["plano"] = forms.ChoiceField(
-                choices=Clinica.Plano.choices,
-                initial=self.instance.plano or Clinica.Plano.BASICO,
-                required=True,
-            )
             self.fields["status"] = forms.BooleanField(
                 required=False,
                 initial=self.instance.status,
@@ -54,8 +49,6 @@ class ClinicaForm(forms.ModelForm):
         for name, field in self.fields.items():
             if name in {"status", "reseta_senha"}:
                 field.widget.attrs.update({"class": "toggle toggle-success"})
-            elif name == "plano":
-                field.widget.attrs.setdefault("class", "select select-bordered w-full")
             else:
                 field.widget.attrs.setdefault("class", "input input-bordered w-full")
 
@@ -64,8 +57,6 @@ class ClinicaForm(forms.ModelForm):
         password = self.cleaned_data.get("password")
         if password:
             clinica.set_password(password)
-        if "plano" in self.cleaned_data:
-            clinica.plano = self.cleaned_data["plano"]
         if "status" in self.cleaned_data:
             clinica.status = self.cleaned_data["status"]
         if "reseta_senha" in self.cleaned_data:
@@ -145,11 +136,6 @@ class ColaboradorForm(forms.ModelForm):
         if modulos_invalidos:
             raise ValidationError(
                 "As permissões selecionadas contêm módulos inválidos."
-            )
-
-        if not clinica.pode_adicionar_colaborador(colaborador_atual=self.instance):
-            raise ValidationError(
-                "O plano Profissional permite até 5 colaboradores ativos. Inative um colaborador atual ou altere o plano da clínica."
             )
 
         cleaned_data["modulos_permitidos"] = list(modulos_permitidos)
